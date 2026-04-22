@@ -1,0 +1,37 @@
+{
+  "dataset_name": "israel-nadlan-data",
+  "release_version": "v0.2.0",
+  "release_date": "2026-04-22",
+  "schema_version": "2.1.0",
+  "data_quality_summary": {
+    "fact_rows": 10472,
+    "geography_rows": 1312,
+    "locality_crosswalk_rows": 1306
+  },
+  "files": [
+    {
+      "release_version": "v0.2.0",
+      "path": "data/current/rent_benchmarks.csv",
+      "sha256": "6b2acd5457c1d09481f117016582d2d0c9a71eeab6268f847f67b2435dc5ff7c",
+      "bytes": 2743653,
+      "rows": 10472,
+      "schema_version": "2.1.0"
+    },
+    {
+      "release_version": "v0.2.0",
+      "path": "data/current/geography_reference.csv",
+      "sha256": "784a7cde8984fee69eaae479e77ed6591865c39524514e7c5a03b5aeb257fb6c",
+      "bytes": 109035,
+      "rows": 1312,
+      "schema_version": "2.1.0"
+    },
+    {
+      "release_version": "v0.2.0",
+      "path": "data/current/locality_crosswalk.csv",
+      "sha256": "5bf60a7b1cccc68c94b79e87b9be64bb3c942ddcafc76879b017de5aa2d772f3",
+      "bytes": 82966,
+      "rows": 1306,
+      "schema_version": "2.1.0"
+    }
+  ]
+}

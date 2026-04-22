@@ -1,57 +1,21 @@
 # Limitations
 
-## Not A Live Market Inventory Dataset
+## Not A Live Inventory Dataset
 
-This repository does not measure live asking-rent inventory, active listings, or vacancy. It is a benchmark dataset built from published official or public sources and a modeled fallback series.
+This repository does not represent live asking-rent inventory, listing counts, or vacancy.
 
-## Mixed Metric Types
+## Mixed Value Types
 
-The main table mixes:
+The release includes both direct published values and modeled estimates. They should not be treated as identical measurements.
 
-- directly published average rent values
-- modeled hedonic rent estimates
+## Coverage Differences
 
-These should not be treated as identical measurements. Always inspect `metric_type` and `source_id` before comparison.
+Not every source covers every geography, room bucket, or period.
 
-## Source Coverage Differences
+## Geography Scope
 
-Not every source covers every geography, room group, or period.
+The main fact table includes both locality and district rows. `locality_crosswalk.csv` does not cover district rows.
 
-- `boi_hedonic` is much broader geographically
-- `nadlan.gov.il` covers only a subset of locality-room combinations in the current release
-- `cbs_table49` contributes both localities and district pseudo-geographies
+## Rights Limits
 
-## Interpretation Limits
-
-Users should avoid:
-
-- treating all rows as directly comparable across metric types
-- inferring listing volume or market depth from this table
-- treating modeled rows as if they were directly published official observations
-- making overly precise causal claims from a compiled benchmark table alone
-
-## Temporal Limits
-
-This repository has a release date and separate source periods. Those are not the same thing.
-
-- the patched repository state was prepared on `2026-04-22`
-- most rows refer to `2025`
-- quarterly rows should not be blindly merged with annual rows
-
-## Geography Limits
-
-The fact table contains both locality and district rows.
-
-- district rows are explicit in the patched schema
-- `locality_crosswalk.csv` does not cover district rows
-- `geography_reference.csv` is the canonical join table for all published geographies
-
-## Rights And Source Limits
-
-The repository intentionally uses a conservative rights posture. Source-specific terms may apply, and the repository does not claim to override them.
-
-See:
-
-- [DATA-LICENSE.md](DATA-LICENSE.md)
-- [SOURCES.md](SOURCES.md)
-- [ATTRIBUTION.md](ATTRIBUTION.md)
+Source-specific rights and attribution obligations may apply to source-derived rows.

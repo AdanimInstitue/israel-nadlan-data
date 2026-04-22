@@ -1,0 +1,43 @@
+file_name,column_name,description
+rent_benchmarks.csv,record_id,Published benchmark observation field.
+rent_benchmarks.csv,geography_id,Published benchmark observation field.
+rent_benchmarks.csv,geography_type,Published benchmark observation field.
+rent_benchmarks.csv,geography_name_he,Published benchmark observation field.
+rent_benchmarks.csv,geography_name_en,Published benchmark observation field.
+rent_benchmarks.csv,room_group,Published benchmark observation field.
+rent_benchmarks.csv,metric_type,Published benchmark observation field.
+rent_benchmarks.csv,value_nis,Published benchmark observation field.
+rent_benchmarks.csv,currency,Published benchmark observation field.
+rent_benchmarks.csv,period_type,Published benchmark observation field.
+rent_benchmarks.csv,period_year,Published benchmark observation field.
+rent_benchmarks.csv,period_quarter,Published benchmark observation field.
+rent_benchmarks.csv,period_label,Published benchmark observation field.
+rent_benchmarks.csv,source_id,Published benchmark observation field.
+rent_benchmarks.csv,source_series_id,Published benchmark observation field.
+rent_benchmarks.csv,source_url,Published benchmark observation field.
+rent_benchmarks.csv,source_release_date,Published benchmark observation field.
+rent_benchmarks.csv,source_accessed_at,Published benchmark observation field.
+rent_benchmarks.csv,is_official_published_value,Published benchmark observation field.
+rent_benchmarks.csv,is_modeled_value,Published benchmark observation field.
+rent_benchmarks.csv,suppressed,Published benchmark observation field.
+rent_benchmarks.csv,observations_count,Published benchmark observation field.
+rent_benchmarks.csv,qa_status,Published benchmark observation field.
+rent_benchmarks.csv,notes,Published benchmark observation field.
+geography_reference.csv,geography_id,Canonical geography dimension field.
+geography_reference.csv,geography_type,Canonical geography dimension field.
+geography_reference.csv,locality_code,Canonical geography dimension field.
+geography_reference.csv,district_code,Canonical geography dimension field.
+geography_reference.csv,geography_name_he,Canonical geography dimension field.
+geography_reference.csv,geography_name_en,Canonical geography dimension field.
+geography_reference.csv,district_he,Canonical geography dimension field.
+geography_reference.csv,district_en,Canonical geography dimension field.
+geography_reference.csv,population_approx,Canonical geography dimension field.
+geography_reference.csv,source,Canonical geography dimension field.
+geography_reference.csv,is_active,Canonical geography dimension field.
+locality_crosswalk.csv,locality_code,Locality-only compatibility field.
+locality_crosswalk.csv,locality_name_he,Locality-only compatibility field.
+locality_crosswalk.csv,locality_name_en,Locality-only compatibility field.
+locality_crosswalk.csv,district_he,Locality-only compatibility field.
+locality_crosswalk.csv,district_en,Locality-only compatibility field.
+locality_crosswalk.csv,population_approx,Locality-only compatibility field.
+locality_crosswalk.csv,source,Locality-only compatibility field.
