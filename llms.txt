@@ -1,0 +1,60 @@
+# israel-rent-data
+
+High-density index for agents working in this repository.
+
+## Root Inventory
+- `rent_benchmarks.csv` — canonical fact table
+- `geography_reference.csv` — canonical geography dimension
+- `locality_crosswalk.csv` — locality-only compatibility artifact
+- `manifest.json` — release metadata and provenance summary
+- `README.md` — dataset landing page
+- `SCHEMA.md` — file and column dictionary
+- `METHODOLOGY.md` — source handling and normalization logic
+- `QA.md` — release checks and checklist
+- `DATA-LICENSE.md` / `SOURCES.md` / `ATTRIBUTION.md` / `LIMITATIONS.md` — rights and interpretation docs
+
+## Repo Tree
+```text
+.
+├── .github/
+│   ├── pr-agent-context-template.md
+│   └── workflows/
+│       ├── ci.yml
+│       └── pr-agent-context-refresh.yml
+├── docs/
+│   └── patch/
+│       ├── 01_overview_and_execution_plan.md
+│       ├── 02_repo_patch_spec.md
+│       ├── 03_schema_and_data_model_redesign.md
+│       ├── 04_rights_licensing_and_provenance_plan.md
+│       ├── 05_documentation_pack_spec.md
+│       └── 06_data_expansion_and_release_checklist.md
+├── scripts/
+│   └── validate_release.py
+├── tests/
+│   └── test_validate_release.py
+├── AGENTS.md
+├── llms.txt
+├── .agent-plan.md
+├── pyproject.toml
+├── manifest.json
+├── rent_benchmarks.csv
+├── geography_reference.csv
+└── locality_crosswalk.csv
+```
+
+## Critical Schemas
+- Fact schema: `rent_benchmarks.csv`, documented in `SCHEMA.md`
+- Geography schema: `geography_reference.csv`, documented in `SCHEMA.md`
+- Release metadata schema: `manifest.json`, described in `README.md` and `QA.md`
+
+## Validation Entry Points
+- Release validation CLI: `scripts/validate_release.py`
+- Automated tests: `tests/test_validate_release.py`
+- CI workflow and coverage artifact producer: `.github/workflows/ci.yml`
+- PR refresh workflow for managed context comments: `.github/workflows/pr-agent-context-refresh.yml`
+
+## Agent Context Files
+- Static constraints: `AGENTS.md`
+- Current dynamic state: `.agent-plan.md`
+- Long-form planning docs preserved under `docs/patch/`
