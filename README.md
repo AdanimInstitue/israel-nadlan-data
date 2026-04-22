@@ -1,55 +1,78 @@
-# israel-rent-data
+# israel-nadlan-data
 
-Published CSV snapshots for the Adanim Institute Israel rent benchmark dataset.
+Public dataset repository for Israeli housing-rent benchmark observations derived from named public sources.
 
-## Files
+This repository is a data product, not an exploratory workspace. It publishes release snapshots, schema and methodology documentation, conservative rights notes, and machine-readable metadata needed to understand each release on its own.
 
-- `rent_benchmarks.csv`
-  Locality-by-room-group rent benchmarks.
-- `locality_crosswalk.csv`
-  Locality metadata used by the benchmark pipeline.
-- `manifest.json`
-  Machine-readable release metadata, provenance, row counts, and file hashes.
+## What This Repository Publishes
 
-## Versioning
+The repository publishes:
 
-Dataset releases are published as Git tags and GitHub releases in this repository.
+- `data/current/rent_benchmarks.csv`: canonical benchmark table
+- `data/current/geography_reference.csv`: canonical geography dimension
+- `data/current/locality_crosswalk.csv`: locality-only compatibility table
+- `metadata/manifest.json`: release manifest
+- `metadata/source_inventory.csv`: source inventory
+- `metadata/data_dictionary.csv`: column dictionary
+- `metadata/release_files.csv`: file-level checksums and row counts
 
-The first public snapshot is `v0.1.0`, built from a validated collector run on April 21, 2026.
+## Current Release
 
-## Current Snapshot
+| Field | Value |
+| --- | --- |
+| Release version | `v0.2.0` |
+| Release date | `2026-04-22` |
+| Schema version | `2.1.0` |
+| Main fact rows | `10,472` |
+| Geography rows | `1,312` |
+| Locality crosswalk rows | `1,306` |
 
-- Version: `v0.1.0`
-- Publication commit: release-tagged in this repository as `v0.1.0`
-- Source collector repo: `AdanimInstitue/israel-rent-data-collector`
-- Collector commit used for the validated run: `0cdfd62`
-- Validated command:
-  `rent-collector --source all --output data/output/rent_benchmarks.csv --validate`
+## Interpretation Guide
 
-## Snapshot Summary
+- One row in `rent_benchmarks.csv` is one benchmark observation for one geography, one room bucket, one source, and one period.
+- `metric_type` must be checked before comparing values.
+- `geography_type` must be checked before ranking or joining places.
+- The repository contains both direct published values and modeled estimates.
+- This is not a live inventory or listing-feed dataset.
 
-- `rent_benchmarks.csv`
-  - Rows: `10,472`
-  - Localities covered: `1,312`
-  - Source mix:
-    - `boi_hedonic`: `10,117`
-    - `nadlan.gov.il`: `297`
-    - `cbs_table49`: `58`
-- `locality_crosswalk.csv`
-  - Rows: `1,306`
-  - Columns:
-    - `locality_code`
-    - `locality_name_he`
-    - `locality_name_en`
-    - `district_he`
-    - `district_en`
-    - `population_approx`
-    - `source`
+## Release Layout
 
-## Provenance
+```text
+data/
+  current/
+  releases/v0.2.0/
+metadata/
+  manifest.json
+  source_inventory.csv
+  data_dictionary.csv
+  release_files.csv
+```
 
-This snapshot was generated from the validated live collector run recorded at:
+## Rights And Attribution
 
-`../israel-rent-data-collector/var/runs/2026-04-21T18-54-55Z/run.json`
+The repository uses a conservative, source-aware rights posture.
 
-The manifest in this repo captures the exact file hashes for the published CSVs.
+- Code and repository-authored release metadata are separate from upstream source rights.
+- Source-derived tables remain subject to source-specific terms and attribution requirements.
+- This repository does not claim to override upstream permissions.
+
+See:
+
+- [DATA-LICENSE.md](DATA-LICENSE.md)
+- [SOURCES.md](SOURCES.md)
+- [ATTRIBUTION.md](ATTRIBUTION.md)
+
+## Documentation
+
+- [SCHEMA.md](SCHEMA.md)
+- [METHODOLOGY.md](METHODOLOGY.md)
+- [QA.md](QA.md)
+- [LIMITATIONS.md](LIMITATIONS.md)
+- [CHANGELOG.md](CHANGELOG.md)
+
+## Validation
+
+```bash
+python scripts/build_release_metadata.py
+python scripts/validate_release.py --check
+```
