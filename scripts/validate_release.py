@@ -3,10 +3,11 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(os.getenv("ISRAEL_NADLAN_DATA_ROOT", Path(__file__).resolve().parent.parent))
 FACT_PATH = ROOT / "data" / "current" / "rent_benchmarks.csv"
 GEOGRAPHY_PATH = ROOT / "data" / "current" / "geography_reference.csv"
 LOCALITY_CROSSWALK_PATH = ROOT / "data" / "current" / "locality_crosswalk.csv"
@@ -29,17 +30,32 @@ def contains_absolute_path(value: object) -> bool:
     if isinstance(value, list):
         return any(contains_absolute_path(item) for item in value)
     if isinstance(value, dict):
-        return any(contains_absolute_path(item) for item in value.values())
+        return any(
+            contains_absolute_path(item) for item in [*value.keys(), *value.values()]
+        )
     return False
 
 
 def validate_release() -> list[str]:
     errors: list[str] = []
-    fact_rows = read_csv(FACT_PATH)
-    geography_rows = read_csv(GEOGRAPHY_PATH)
-    locality_rows = read_csv(LOCALITY_CROSSWALK_PATH)
-    release_files = read_csv(RELEASE_FILES_PATH)
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    try:
+        fact_rows = read_csv(FACT_PATH)
+        geography_rows = read_csv(GEOGRAPHY_PATH)
+        locality_rows = read_csv(LOCALITY_CROSSWALK_PATH)
+        release_files = read_csv(RELEASE_FILES_PATH)
+    except FileNotFoundError as exc:
+        return [f"required release file is missing: {exc.filename}"]
+    except OSError as exc:
+        return [f"failed to read release files: {exc}"]
+
+    try:
+        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return ["metadata/manifest.json is missing"]
+    except json.JSONDecodeError:
+        return ["metadata/manifest.json is not valid JSON"]
+    except OSError as exc:
+        return [f"failed to read metadata/manifest.json: {exc}"]
 
     geography_ids = {row["geography_id"] for row in geography_rows}
     record_ids = [row["record_id"] for row in fact_rows]

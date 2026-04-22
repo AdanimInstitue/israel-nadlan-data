@@ -1,16 +1,19 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import json
+import os
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(os.getenv("ISRAEL_NADLAN_DATA_ROOT", Path(__file__).resolve().parent.parent))
 CURRENT_DIR = ROOT / "data" / "current"
 METADATA_DIR = ROOT / "metadata"
 RELEASE_VERSION = "v0.2.0"
 SCHEMA_VERSION = "2.1.0"
+RELEASE_DATE = "2026-04-22"
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -31,19 +34,26 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build_release_files() -> list[dict[str, object]]:
+def csv_header(path: Path) -> list[str]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle).fieldnames or [])
+
+
+def build_release_files(
+    *, release_version: str = RELEASE_VERSION, schema_version: str = SCHEMA_VERSION
+) -> list[dict[str, object]]:
     rows = []
     for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
         path = CURRENT_DIR / name
         csv_rows = read_csv(path)
         rows.append(
             {
-                "release_version": RELEASE_VERSION,
+                "release_version": release_version,
                 "path": path.relative_to(ROOT).as_posix(),
                 "sha256": sha256(path),
                 "bytes": path.stat().st_size,
                 "rows": len(csv_rows),
-                "schema_version": SCHEMA_VERSION,
+                "schema_version": schema_version,
             }
         )
     return rows
@@ -58,7 +68,7 @@ def build_data_dictionary() -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for file_name in descriptions:
         path = CURRENT_DIR / file_name
-        header = list(read_csv(path)[0].keys())
+        header = csv_header(path)
         for column_name in header:
             rows.append(
                 {
@@ -115,15 +125,21 @@ def build_source_inventory() -> list[dict[str, object]]:
     ]
 
 
-def build_manifest(release_files: list[dict[str, object]]) -> dict[str, object]:
+def build_manifest(
+    release_files: list[dict[str, object]],
+    *,
+    release_version: str = RELEASE_VERSION,
+    schema_version: str = SCHEMA_VERSION,
+    release_date: str = RELEASE_DATE,
+) -> dict[str, object]:
     fact_rows = read_csv(CURRENT_DIR / "rent_benchmarks.csv")
     geo_rows = read_csv(CURRENT_DIR / "geography_reference.csv")
     cross_rows = read_csv(CURRENT_DIR / "locality_crosswalk.csv")
     return {
         "dataset_name": "israel-nadlan-data",
-        "release_version": RELEASE_VERSION,
-        "release_date": "2026-04-22",
-        "schema_version": SCHEMA_VERSION,
+        "release_version": release_version,
+        "release_date": release_date,
+        "schema_version": schema_version,
         "data_quality_summary": {
             "fact_rows": len(fact_rows),
             "geography_rows": len(geo_rows),
@@ -133,9 +149,18 @@ def build_manifest(release_files: list[dict[str, object]]) -> dict[str, object]:
     }
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Build public release metadata files.")
+    parser.add_argument("--release-version", default=RELEASE_VERSION)
+    parser.add_argument("--schema-version", default=SCHEMA_VERSION)
+    parser.add_argument("--release-date", default=RELEASE_DATE)
+    args = parser.parse_args(argv)
+
     METADATA_DIR.mkdir(parents=True, exist_ok=True)
-    release_files = build_release_files()
+    release_files = build_release_files(
+        release_version=args.release_version,
+        schema_version=args.schema_version,
+    )
     write_csv(
         METADATA_DIR / "release_files.csv",
         ["release_version", "path", "sha256", "bytes", "rows", "schema_version"],
@@ -160,7 +185,12 @@ def main() -> int:
         ],
         build_source_inventory(),
     )
-    manifest = build_manifest(release_files)
+    manifest = build_manifest(
+        release_files,
+        release_version=args.release_version,
+        schema_version=args.schema_version,
+        release_date=args.release_date,
+    )
     (METADATA_DIR / "manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",

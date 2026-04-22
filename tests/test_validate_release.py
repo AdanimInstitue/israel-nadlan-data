@@ -140,10 +140,29 @@ def test_release_validation_reports_missing_quality_summary(
     assert "manifest.json is missing required data_quality_summary fields" in errors
 
 
+def test_release_validation_reports_missing_manifest_file(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    vr.MANIFEST_PATH.unlink()
+
+    assert vr.validate_release() == ["metadata/manifest.json is missing"]
+
+
+def test_release_validation_reports_invalid_manifest_json(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    vr.MANIFEST_PATH.write_text("{", encoding="utf-8")
+
+    assert vr.validate_release() == ["metadata/manifest.json is not valid JSON"]
+
+
 def test_contains_absolute_path_handles_nested_structures() -> None:
     assert vr.contains_absolute_path(
         {"files": [{"path": "C:\\temp\\internal.csv"}], "extra": ["relative/path.csv"]}
     )
+    assert vr.contains_absolute_path({"C:\\temp\\internal.csv": "relative/path.csv"})
     assert not vr.contains_absolute_path({"files": [{"path": "data/current/rent_benchmarks.csv"}]})
 
 
@@ -240,7 +259,7 @@ def test_build_release_metadata_main_writes_expected_outputs(
 ) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
 
-    assert brm.main() == 0
+    assert brm.main([]) == 0
 
     release_files = list(csv.DictReader((tmp_path / "metadata" / "release_files.csv").open()))
     assert [row["path"] for row in release_files] == [
@@ -299,6 +318,17 @@ def test_build_data_dictionary_and_source_inventory(tmp_path: Path, monkeypatch)
     }
 
 
+def test_build_data_dictionary_handles_header_only_csv(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    (brm.CURRENT_DIR / "geography_reference.csv").write_text("geography_id\n", encoding="utf-8")
+
+    data_dictionary = brm.build_data_dictionary()
+
+    assert {
+        row["column_name"] for row in data_dictionary if row["file_name"] == "geography_reference.csv"
+    } == {"geography_id"}
+
+
 def test_sha256_and_write_csv_helpers(tmp_path: Path) -> None:
     sample = tmp_path / "sample.csv"
     brm.write_csv(sample, ["col"], [{"col": "1"}])
@@ -314,6 +344,7 @@ def test_build_release_metadata_module_main_raises_system_exit(
     tmp_path: Path, monkeypatch
 ) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
+    monkeypatch.setenv("ISRAEL_NADLAN_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr("sys.argv", ["build_release_metadata.py"])
 
     try:
@@ -324,8 +355,11 @@ def test_build_release_metadata_module_main_raises_system_exit(
         raise AssertionError("expected SystemExit")
 
 
-def test_module_main_raises_system_exit_when_run_as_script(monkeypatch) -> None:
-    monkeypatch.setattr(vr, "main", lambda: 0)
+def test_validate_release_module_main_raises_system_exit_when_run_as_script(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    monkeypatch.setenv("ISRAEL_NADLAN_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr("sys.argv", ["validate_release.py"])
     try:
         runpy.run_module("scripts.validate_release", run_name="__main__")
