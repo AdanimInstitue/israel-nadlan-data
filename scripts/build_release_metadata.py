@@ -14,6 +14,7 @@ METADATA_DIR = ROOT / "metadata"
 RELEASE_VERSION = "v0.2.0"
 SCHEMA_VERSION = "2.1.0"
 RELEASE_DATE = "2026-04-22"
+PUBLISHED_FILES = ["geography_reference.csv", "locality_crosswalk.csv"]
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -24,7 +25,7 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
@@ -58,7 +59,7 @@ def build_release_files(
     rows = []
     snapshot_dir = release_snapshot_dir(release_version)
     for base_dir in [CURRENT_DIR, snapshot_dir]:
-        for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
+        for name in PUBLISHED_FILES:
             path = base_dir / name
             rows.append(
                 {
@@ -75,9 +76,8 @@ def build_release_files(
 
 def build_data_dictionary() -> list[dict[str, object]]:
     descriptions = {
-        "rent_benchmarks.csv": "Published benchmark observation field.",
-        "geography_reference.csv": "Canonical geography dimension field.",
-        "locality_crosswalk.csv": "Locality-only compatibility field.",
+        "geography_reference.csv": "Canonical geography reference field.",
+        "locality_crosswalk.csv": "Locality context and compatibility field.",
     }
     rows: list[dict[str, object]] = []
     for file_name in descriptions:
@@ -92,51 +92,6 @@ def build_data_dictionary() -> list[dict[str, object]]:
                 }
             )
     return rows
-
-
-def build_source_inventory() -> list[dict[str, object]]:
-    return [
-        {
-            "source_id": "nadlan.gov.il",
-            "display_name": "Israeli government real-estate portal",
-            "homepage_url": "https://www.nadlan.gov.il/",
-            "terms_url": "",
-            "license_url": "",
-            "access_method": "public_website",
-            "public_status": "active",
-            "attribution_required": "true",
-        },
-        {
-            "source_id": "cbs_table49",
-            "display_name": "CBS Table 4.9",
-            "homepage_url": "https://www.cbs.gov.il/",
-            "terms_url": "https://www.cbs.gov.il/en/Pages/Enduser-license.aspx",
-            "license_url": "",
-            "access_method": "direct_download",
-            "public_status": "active",
-            "attribution_required": "true",
-        },
-        {
-            "source_id": "boi_hedonic",
-            "display_name": "Bank of Israel hedonic source material",
-            "homepage_url": "https://www.boi.org.il/",
-            "terms_url": "https://www.boi.org.il/en/terms-of-use/",
-            "license_url": "",
-            "access_method": "public_pdf",
-            "public_status": "active",
-            "attribution_required": "true",
-        },
-        {
-            "source_id": "data.gov.il",
-            "display_name": "data.gov.il / CBS locality registry",
-            "homepage_url": "https://data.gov.il/dataset/citiesandsettelments",
-            "terms_url": "",
-            "license_url": "",
-            "access_method": "public_dataset",
-            "public_status": "active",
-            "attribution_required": "true",
-        },
-    ]
 
 
 def build_manifest(
@@ -157,7 +112,6 @@ def build_manifest(
         "release_date": release_date,
         "schema_version": schema_version,
         "data_quality_summary": {
-            "fact_rows": current_row_counts["rent_benchmarks.csv"],
             "geography_rows": current_row_counts["geography_reference.csv"],
             "locality_crosswalk_rows": current_row_counts["locality_crosswalk.csv"],
         },
@@ -186,20 +140,6 @@ def main(argv: list[str] | None = None) -> int:
         METADATA_DIR / "data_dictionary.csv",
         ["file_name", "column_name", "description"],
         build_data_dictionary(),
-    )
-    write_csv(
-        METADATA_DIR / "source_inventory.csv",
-        [
-            "source_id",
-            "display_name",
-            "homepage_url",
-            "terms_url",
-            "license_url",
-            "access_method",
-            "public_status",
-            "attribution_required",
-        ],
-        build_source_inventory(),
     )
     manifest = build_manifest(
         release_files,

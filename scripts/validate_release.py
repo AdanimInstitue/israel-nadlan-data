@@ -9,26 +9,36 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
 ROOT = Path(os.getenv("ISRAEL_NADLAN_DATA_ROOT", Path(__file__).resolve().parent.parent))
-FACT_PATH = ROOT / "data" / "current" / "rent_benchmarks.csv"
 GEOGRAPHY_PATH = ROOT / "data" / "current" / "geography_reference.csv"
 LOCALITY_CROSSWALK_PATH = ROOT / "data" / "current" / "locality_crosswalk.csv"
 MANIFEST_PATH = ROOT / "metadata" / "manifest.json"
 RELEASE_FILES_PATH = ROOT / "metadata" / "release_files.csv"
+SOURCE_INVENTORY_PATH = ROOT / "metadata" / "source_inventory.csv"
+LEGACY_CURRENT_FACT_PATH = ROOT / "data" / "current" / "rent_benchmarks.csv"
 
 VALID_GEOGRAPHY_TYPES = {"locality", "district"}
-VALID_METRIC_TYPES = {"average_rent_published", "hedonic_rent_estimate"}
-VALID_PERIOD_TYPES = {"annual", "quarterly"}
-FACT_REQUIRED_COLUMNS = {
-    "record_id",
+GEOGRAPHY_REQUIRED_COLUMNS = {
     "geography_id",
     "geography_type",
-    "metric_type",
-    "value_nis",
-    "period_type",
-    "source_id",
+    "locality_code",
+    "district_code",
+    "geography_name_he",
+    "geography_name_en",
+    "district_he",
+    "district_en",
+    "population_approx",
+    "source",
+    "is_active",
 }
-GEOGRAPHY_REQUIRED_COLUMNS = {"geography_id"}
-LOCALITY_REQUIRED_COLUMNS = {"locality_code"}
+LOCALITY_REQUIRED_COLUMNS = {
+    "locality_code",
+    "locality_name_he",
+    "locality_name_en",
+    "district_he",
+    "district_en",
+    "population_approx",
+    "source",
+}
 RELEASE_FILES_REQUIRED_COLUMNS = {"path", "sha256", "bytes", "rows"}
 
 
@@ -81,19 +91,18 @@ def contains_absolute_path(value: object) -> bool:
 
 def validate_release() -> list[str]:
     errors: list[str] = []
+    header_validation_failed = False
     try:
-        fact_rows = read_csv(FACT_PATH)
         geography_rows = read_csv(GEOGRAPHY_PATH)
         locality_rows = read_csv(LOCALITY_CROSSWALK_PATH)
         release_files = read_csv(RELEASE_FILES_PATH)
     except FileNotFoundError as exc:
-        filename = Path(exc.filename) if exc.filename else FACT_PATH
+        filename = Path(exc.filename) if exc.filename else GEOGRAPHY_PATH
         return [f"required release file is missing: {relative_display_path(filename)}"]
     except OSError as exc:
         return [f"failed to read release files: {exc}"]
 
     header_checks = [
-        (FACT_PATH, FACT_REQUIRED_COLUMNS),
         (GEOGRAPHY_PATH, GEOGRAPHY_REQUIRED_COLUMNS),
         (LOCALITY_CROSSWALK_PATH, LOCALITY_REQUIRED_COLUMNS),
         (RELEASE_FILES_PATH, RELEASE_FILES_REQUIRED_COLUMNS),
@@ -101,12 +110,16 @@ def validate_release() -> list[str]:
     for path, required_columns in header_checks:
         missing_columns = missing_required_columns(path, required_columns)
         if missing_columns:
+            header_validation_failed = True
             errors.append(
                 "missing required columns in "
                 f"{relative_display_path(path)}: {', '.join(missing_columns)}"
             )
 
-    if errors:
+    if SOURCE_INVENTORY_PATH.exists():
+        errors.append("forbidden legacy file still present: metadata/source_inventory.csv")
+
+    if header_validation_failed:
         return errors
 
     try:
@@ -119,26 +132,18 @@ def validate_release() -> list[str]:
         return [f"failed to read metadata/manifest.json: {exc}"]
 
     geography_ids = {row["geography_id"] for row in geography_rows}
-    record_ids = [row["record_id"] for row in fact_rows]
+    if len(geography_ids) != len(geography_rows):
+        errors.append("duplicate geography_id values found in geography_reference.csv")
+    if any(not row["geography_id"].strip() for row in geography_rows):
+        errors.append("geography_reference.csv contains blank geography_id fields")
+    if any(row["geography_type"] not in VALID_GEOGRAPHY_TYPES for row in geography_rows):
+        errors.append("geography_reference.csv contains invalid geography_type values")
 
-    if len(record_ids) != len(set(record_ids)):
-        errors.append("duplicate record_id values found in rent_benchmarks.csv")
-    if any(not row["value_nis"].strip() for row in fact_rows):
-        errors.append("rent_benchmarks.csv contains blank value_nis fields")
-    if any(row["geography_type"] not in VALID_GEOGRAPHY_TYPES for row in fact_rows):
-        errors.append("rent_benchmarks.csv contains invalid geography_type values")
-    if any(row["metric_type"] not in VALID_METRIC_TYPES for row in fact_rows):
-        errors.append("rent_benchmarks.csv contains invalid metric_type values")
-    if any(row["period_type"] not in VALID_PERIOD_TYPES for row in fact_rows):
-        errors.append("rent_benchmarks.csv contains invalid period_type values")
-
-    missing_geographies = sorted(
-        {row["geography_id"] for row in fact_rows if row["geography_id"] not in geography_ids}
-    )
-    if missing_geographies:
-        errors.append(
-            f"fact rows missing geography_reference join keys: {', '.join(missing_geographies[:10])}"
-        )
+    locality_codes = [row["locality_code"] for row in locality_rows]
+    if len(locality_codes) != len(set(locality_codes)):
+        errors.append("duplicate locality_code values found in locality_crosswalk.csv")
+    if any(not row["locality_code"].strip() for row in locality_rows):
+        errors.append("locality_crosswalk.csv contains blank locality_code fields")
 
     if contains_absolute_path(manifest):
         errors.append("metadata manifest contains internal absolute paths")
@@ -146,7 +151,6 @@ def validate_release() -> list[str]:
     try:
         quality_summary = manifest["data_quality_summary"]
         release_version = str(manifest["release_version"])
-        expected_fact_rows = quality_summary["fact_rows"]
         expected_geo_rows = quality_summary["geography_rows"]
         expected_crosswalk_rows = quality_summary["locality_crosswalk_rows"]
     except (KeyError, TypeError):
@@ -157,30 +161,38 @@ def validate_release() -> list[str]:
     if quality_summary is None or release_version is None:
         return errors
 
-    if expected_fact_rows != len(fact_rows):
-        errors.append("manifest fact row count does not match rent_benchmarks.csv")
     if expected_geo_rows != len(geography_rows):
         errors.append("manifest geography row count does not match geography_reference.csv")
     if expected_crosswalk_rows != len(locality_rows):
         errors.append("manifest locality row count does not match locality_crosswalk.csv")
 
     expected_paths = {
-        "data/current/rent_benchmarks.csv",
         "data/current/geography_reference.csv",
         "data/current/locality_crosswalk.csv",
-        f"data/releases/{release_version}/rent_benchmarks.csv",
         f"data/releases/{release_version}/geography_reference.csv",
         f"data/releases/{release_version}/locality_crosswalk.csv",
     }
     actual_paths = {row["path"] for row in release_files}
     if expected_paths - actual_paths:
         errors.append("release_files.csv is missing one or more canonical file paths")
+    if actual_paths - expected_paths:
+        errors.append("release_files.csv contains unexpected legacy file paths")
     if any(contains_absolute_path(row["path"]) for row in release_files):
         errors.append("release_files.csv contains absolute paths")
     if len(actual_paths) != len(release_files):
         errors.append("release_files.csv contains duplicate path rows")
 
-    for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
+    for legacy_path in [
+        LEGACY_CURRENT_FACT_PATH,
+        ROOT / "data" / "releases" / release_version / "rent_benchmarks.csv",
+    ]:
+        if legacy_path.exists():
+            errors.append(f"forbidden legacy file still present: {relative_display_path(legacy_path)}")
+
+    if errors:
+        return errors
+
+    for name in ["geography_reference.csv", "locality_crosswalk.csv"]:
         current_path = f"data/current/{name}"
         snapshot_path = f"data/releases/{release_version}/{name}"
         current_entry = next((row for row in release_files if row["path"] == current_path), None)
@@ -213,12 +225,16 @@ def validate_release() -> list[str]:
 
 
 def build_summary() -> dict[str, object]:
-    fact_rows = read_csv(FACT_PATH)
     geography_rows = read_csv(GEOGRAPHY_PATH)
+    locality_rows = read_csv(LOCALITY_CROSSWALK_PATH)
     return {
-        "fact_rows": len(fact_rows),
         "geography_rows": len(geography_rows),
-        "distinct_fact_sources": sorted({row["source_id"] for row in fact_rows}),
+        "locality_crosswalk_rows": len(locality_rows),
+        "distinct_reference_sources": sorted(
+            {row["source"] for row in geography_rows}.union(
+                {row["source"] for row in locality_rows}
+            )
+        ),
     }
 
 

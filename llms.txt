@@ -1,6 +1,6 @@
 # israel-nadlan-data
 
-Public dataset repository for Israeli housing-rent benchmark data.
+Public dataset repository for Israeli geography reference and locality context data.
 
 ## Core Tree
 
@@ -10,7 +10,6 @@ data/
   releases/v0.2.0/
 metadata/
   manifest.json
-  source_inventory.csv
   data_dictionary.csv
   release_files.csv
 docs/
@@ -20,12 +19,10 @@ tests/
 
 ## Key Pointers
 
-- Main fact table: `data/current/rent_benchmarks.csv`
 - Geography dimension: `data/current/geography_reference.csv`
 - Compatibility crosswalk: `data/current/locality_crosswalk.csv`
 - Release manifest: `metadata/manifest.json`
 - File checksums and row counts: `metadata/release_files.csv`
 - Column dictionary: `metadata/data_dictionary.csv`
-- Source inventory: `metadata/source_inventory.csv`
 - Metadata generation: `scripts/build_release_metadata.py`
 - Validation: `scripts/validate_release.py`

@@ -1,7 +1,5 @@
 release_version,path,sha256,bytes,rows,schema_version
-v0.2.0,data/current/rent_benchmarks.csv,6b2acd5457c1d09481f117016582d2d0c9a71eeab6268f847f67b2435dc5ff7c,2743653,10472,2.1.0
 v0.2.0,data/current/geography_reference.csv,784a7cde8984fee69eaae479e77ed6591865c39524514e7c5a03b5aeb257fb6c,109035,1312,2.1.0
 v0.2.0,data/current/locality_crosswalk.csv,5bf60a7b1cccc68c94b79e87b9be64bb3c942ddcafc76879b017de5aa2d772f3,82966,1306,2.1.0
-v0.2.0,data/releases/v0.2.0/rent_benchmarks.csv,6b2acd5457c1d09481f117016582d2d0c9a71eeab6268f847f67b2435dc5ff7c,2743653,10472,2.1.0
 v0.2.0,data/releases/v0.2.0/geography_reference.csv,784a7cde8984fee69eaae479e77ed6591865c39524514e7c5a03b5aeb257fb6c,109035,1312,2.1.0
 v0.2.0,data/releases/v0.2.0/locality_crosswalk.csv,5bf60a7b1cccc68c94b79e87b9be64bb3c942ddcafc76879b017de5aa2d772f3,82966,1306,2.1.0

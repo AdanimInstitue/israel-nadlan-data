@@ -1,21 +1,13 @@
 # Limitations
 
-## Not A Live Inventory Dataset
+## Not A Rent Benchmark Dataset
 
-This repository does not represent live asking-rent inventory, listing counts, or vacancy.
-
-## Mixed Value Types
-
-The release includes both direct published values and modeled estimates. They should not be treated as identical measurements.
-
-## Coverage Differences
-
-Not every source covers every geography, room bucket, or period.
+This repository does not publish rent observations, asking-rent inventory, listing counts, or vacancy.
 
 ## Geography Scope
 
-The main fact table includes both locality and district rows. `locality_crosswalk.csv` does not cover district rows.
+The geography reference includes both locality and district rows. `locality_crosswalk.csv` covers locality context only.
 
 ## Rights Limits
 
-Source-specific rights and attribution obligations may apply to source-derived rows.
+Source-specific rights and attribution obligations may still apply to the public geography sources referenced in the docs.

@@ -2,13 +2,13 @@
 
 ## Release Checks
 
-- `record_id` values are unique
-- `value_nis` is present for all published fact rows
+- `geography_id` values are unique in `geography_reference.csv`
+- `locality_code` values are unique in `locality_crosswalk.csv`
 - `geography_type` values are valid
-- `metric_type` values are valid
-- every fact geography joins to `geography_reference.csv`
+- required reference columns are present
 - manifest file counts match the published CSVs
 - metadata paths are repository-relative
+- legacy benchmark and source-inventory files are absent
 
 ## Validation Command
 
@@ -18,6 +18,6 @@ python scripts/validate_release.py --check
 
 ## Known Warnings
 
-- direct and modeled values coexist in the same release
-- source-specific rights positions differ
-- most rows in this release are for 2025
+- the release is reference-only
+- rights and attribution notes remain source-specific
+- locality context is not a substitute for the canonical geography table
