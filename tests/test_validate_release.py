@@ -257,6 +257,39 @@ def test_release_validation_reports_dataset_shape_errors(tmp_path: Path, monkeyp
     assert any("fact rows missing geography_reference join keys" in error for error in errors)
 
 
+def test_release_validation_treats_whitespace_value_as_blank(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    write_fixture_csv(
+        vr.FACT_PATH,
+        [
+            "record_id",
+            "geography_id",
+            "geography_type",
+            "metric_type",
+            "value_nis",
+            "period_type",
+            "source_id",
+        ],
+        [
+            {
+                "record_id": "r1",
+                "geography_id": "1000",
+                "geography_type": "locality",
+                "metric_type": "average_rent_published",
+                "value_nis": "   ",
+                "period_type": "quarterly",
+                "source_id": "nadlan.gov.il",
+            }
+        ],
+    )
+
+    errors = vr.validate_release()
+
+    assert "rent_benchmarks.csv contains blank value_nis fields" in errors
+
+
 def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monkeypatch) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
     write_fixture_csv(
@@ -268,6 +301,19 @@ def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monk
     errors = vr.validate_release()
 
     assert "release_files.csv is missing one or more canonical file paths" in errors
+
+
+def test_release_validation_reports_duplicate_release_file_paths(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    rows = list(csv.DictReader(vr.RELEASE_FILES_PATH.open(encoding="utf-8", newline="")))
+    rows.append(dict(rows[0]))
+    write_fixture_csv(vr.RELEASE_FILES_PATH, ["path", "sha256", "bytes", "rows"], rows)
+
+    errors = vr.validate_release()
+
+    assert "release_files.csv contains duplicate path rows" in errors
 
 
 def test_release_validation_reports_missing_snapshot_file_on_disk(

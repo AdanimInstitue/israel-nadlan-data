@@ -123,7 +123,7 @@ def validate_release() -> list[str]:
 
     if len(record_ids) != len(set(record_ids)):
         errors.append("duplicate record_id values found in rent_benchmarks.csv")
-    if any(not row["value_nis"] for row in fact_rows):
+    if any(not row["value_nis"].strip() for row in fact_rows):
         errors.append("rent_benchmarks.csv contains blank value_nis fields")
     if any(row["geography_type"] not in VALID_GEOGRAPHY_TYPES for row in fact_rows):
         errors.append("rent_benchmarks.csv contains invalid geography_type values")
@@ -177,6 +177,8 @@ def validate_release() -> list[str]:
         errors.append("release_files.csv is missing one or more canonical file paths")
     if any(contains_absolute_path(row["path"]) for row in release_files):
         errors.append("release_files.csv contains absolute paths")
+    if len(actual_paths) != len(release_files):
+        errors.append("release_files.csv contains duplicate path rows")
 
     for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
         current_path = f"data/current/{name}"
