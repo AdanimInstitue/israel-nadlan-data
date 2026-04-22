@@ -210,12 +210,13 @@ def test_release_validation_reports_path_and_count_errors(tmp_path: Path, monkey
     install_fixture_repo(tmp_path, monkeypatch)
     vr.MANIFEST_PATH.write_text(
         json.dumps(
-            {
-                "dataset_name": "israel-nadlan-data",
-                "release_version": "v0.2.0",
-                "data_quality_summary": {
-                    "geography_rows": 3,
-                    "locality_crosswalk_rows": 2,
+                {
+                    "dataset_name": "israel-nadlan-data",
+                    "release_version": "v0.2.0",
+                    "schema_version": "1.0.0",
+                    "data_quality_summary": {
+                        "geography_rows": 3,
+                        "locality_crosswalk_rows": 2,
                 },
                 "bad_path": "/abs/path",
             }

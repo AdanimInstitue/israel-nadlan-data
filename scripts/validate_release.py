@@ -39,7 +39,14 @@ LOCALITY_REQUIRED_COLUMNS = {
     "population_approx",
     "source",
 }
-RELEASE_FILES_REQUIRED_COLUMNS = {"path", "sha256", "bytes", "rows"}
+RELEASE_FILES_REQUIRED_COLUMNS = {
+    "path",
+    "release_version",
+    "schema_version",
+    "sha256",
+    "bytes",
+    "rows",
+}
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
@@ -117,7 +124,10 @@ def validate_release() -> list[str]:
             )
 
     if SOURCE_INVENTORY_PATH.exists():
-        errors.append("forbidden legacy file still present: metadata/source_inventory.csv")
+        errors.append(
+            "forbidden legacy file still present: "
+            f"{relative_display_path(SOURCE_INVENTORY_PATH)}"
+        )
 
     if header_validation_failed:
         return errors
@@ -151,14 +161,16 @@ def validate_release() -> list[str]:
     try:
         quality_summary = manifest["data_quality_summary"]
         release_version = str(manifest["release_version"])
+        schema_version = str(manifest["schema_version"])
         expected_geo_rows = quality_summary["geography_rows"]
         expected_crosswalk_rows = quality_summary["locality_crosswalk_rows"]
     except (KeyError, TypeError):
         errors.append("manifest.json is missing required release metadata fields")
         quality_summary = None
         release_version = None
+        schema_version = None
 
-    if quality_summary is None or release_version is None:
+    if quality_summary is None or release_version is None or schema_version is None:
         return errors
 
     if expected_geo_rows != len(geography_rows):
@@ -181,6 +193,15 @@ def validate_release() -> list[str]:
         errors.append("release_files.csv contains absolute paths")
     if len(actual_paths) != len(release_files):
         errors.append("release_files.csv contains duplicate path rows")
+
+    for row in release_files:
+        if row.get("release_version") != release_version:
+            errors.append("release_files.csv contains inconsistent release_version values")
+            break
+    for row in release_files:
+        if row.get("schema_version") != schema_version:
+            errors.append("release_files.csv contains inconsistent schema_version values")
+            break
 
     for legacy_path in [
         LEGACY_CURRENT_FACT_PATH,
