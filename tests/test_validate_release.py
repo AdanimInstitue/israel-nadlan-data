@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import runpy
 from pathlib import Path
 
 from scripts import validate_release as vr
@@ -16,7 +17,7 @@ def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> 
 
 def sample_fact_row() -> dict[str, str]:
     return {
-        "record_id": "row-1",
+        "record_id": "nadlan_gov_il__1000__3__average_rent_published__2025-Q2",
         "geography_id": "1000",
         "geography_type": "locality",
         "geography_name_he": "א",
@@ -116,7 +117,24 @@ def test_summary_matches_expected_release_shape() -> None:
     summary = vr.build_summary()
     assert summary["fact_rows"] == 10472
     assert summary["geography_rows"] == 1312
-    assert summary["distinct_sources"] == ["boi_hedonic", "cbs_table49", "nadlan.gov.il"]
+    assert summary["distinct_fact_sources"] == ["boi_hedonic", "cbs_table49", "nadlan.gov.il"]
+
+
+def test_record_id_helpers_apply_documented_normalization() -> None:
+    assert vr.normalize_source_id_for_record_id("nadlan.gov.il") == "nadlan_gov_il"
+    assert vr.normalize_room_group_for_record_id("5+") == "5plus"
+    assert (
+        vr.build_record_id(
+            {
+                "source_id": "nadlan.gov.il",
+                "geography_id": "5000",
+                "room_group": "5+",
+                "metric_type": "average_rent_published",
+                "period_label": "2025-Q2",
+            }
+        )
+        == "nadlan_gov_il__5000__5plus__average_rent_published__2025-Q2"
+    )
 
 
 def test_validate_release_reports_structural_errors(tmp_path: Path, monkeypatch) -> None:
@@ -124,6 +142,7 @@ def test_validate_release_reports_structural_errors(tmp_path: Path, monkeypatch)
     fact = sample_fact_row()
     fact["record_id"] = "dup"
     duplicate = dict(fact)
+    duplicate["geography_type"] = "bad_geography"
     duplicate["metric_type"] = "bad_metric"
     duplicate["geography_id"] = "9999"
     duplicate["value_nis"] = ""
@@ -131,16 +150,21 @@ def test_validate_release_reports_structural_errors(tmp_path: Path, monkeypatch)
 
     manifest = sample_manifest()
     manifest["data_quality_summary"]["fact_rows"] = 99
+    manifest["data_quality_summary"]["geography_rows"] = 77
     manifest["data_quality_summary"]["distinct_geographies_by_type"] = {"locality": 2, "district": 7}
     manifest["files"]["locality_crosswalk.csv"]["rows"] = 7
+    manifest["collector_repo"] = {"collector_run_artifact": "/Users/example/private/path"}
     vr.MANIFEST_PATH.write_text(json.dumps(manifest) + "\n", encoding="utf-8")
 
     errors = vr.validate_release()
     assert any("duplicate record_id" in error for error in errors)
     assert any("blank value_nis" in error for error in errors)
+    assert any("invalid geography_type" in error for error in errors)
     assert any("invalid metric_type" in error for error in errors)
     assert any("missing geography_reference" in error for error in errors)
+    assert any("internal absolute paths" in error for error in errors)
     assert any("fact_rows" in error for error in errors)
+    assert any("geography_rows" in error for error in errors)
     assert any("locality_crosswalk row count" in error for error in errors)
     assert any("distinct_geographies_by_type" in error for error in errors)
 
@@ -162,3 +186,13 @@ def test_main_returns_nonzero_for_invalid_fixture(tmp_path: Path, monkeypatch, c
     assert vr.main() == 1
     captured = capsys.readouterr()
     assert "Release validation failed:" in captured.out
+
+
+def test_module_main_raises_system_exit_when_run_as_script(monkeypatch) -> None:
+    monkeypatch.setattr(vr, "main", lambda: 0)
+    try:
+        runpy.run_module("scripts.validate_release", run_name="__main__")
+    except SystemExit as exc:
+        assert exc.code == 0
+    else:
+        raise AssertionError("expected SystemExit")

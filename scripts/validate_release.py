@@ -18,6 +18,26 @@ VALID_METRIC_TYPES = {"average_rent_published", "hedonic_rent_estimate"}
 VALID_PERIOD_TYPES = {"annual", "quarterly"}
 
 
+def normalize_source_id_for_record_id(source_id: str) -> str:
+    return source_id.replace(".", "_")
+
+
+def normalize_room_group_for_record_id(room_group: str) -> str:
+    return room_group.replace("+", "plus")
+
+
+def build_record_id(row: dict[str, str]) -> str:
+    return "__".join(
+        [
+            normalize_source_id_for_record_id(row["source_id"]),
+            row["geography_id"],
+            normalize_room_group_for_record_id(row["room_group"]),
+            row["metric_type"],
+            row["period_label"],
+        ]
+    )
+
+
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
@@ -41,6 +61,8 @@ def validate_release() -> list[str]:
         errors.append("duplicate record_id values found in rent_benchmarks.csv")
     if any(not row["value_nis"] for row in fact_rows):
         errors.append("rent_benchmarks.csv contains blank value_nis fields")
+    if any(row["record_id"] != build_record_id(row) for row in fact_rows):
+        errors.append("rent_benchmarks.csv contains record_id values that do not match the documented normalization rules")
 
     bad_geography_types = sorted(
         {row["geography_type"] for row in fact_rows if row["geography_type"] not in VALID_GEOGRAPHY_TYPES}
@@ -79,7 +101,6 @@ def validate_release() -> list[str]:
     if locality_crosswalk_rows != len(locality_rows):
         errors.append("manifest locality_crosswalk row count does not match locality_crosswalk.csv")
 
-    fact_distinct_by_type = Counter(row["geography_type"] for row in fact_rows)
     manifest_distinct_by_type = manifest.get("data_quality_summary", {}).get("distinct_geographies_by_type", {})
     for geography_type in VALID_GEOGRAPHY_TYPES:
         expected = manifest_distinct_by_type.get(geography_type)
@@ -98,7 +119,7 @@ def build_summary() -> dict[str, object]:
     return {
         "fact_rows": len(fact_rows),
         "geography_rows": len(geography_rows),
-        "distinct_sources": sorted({row["source_id"] for row in fact_rows}),
+        "distinct_fact_sources": sorted({row["source_id"] for row in fact_rows}),
         "distinct_periods": sorted({row["period_label"] for row in fact_rows}),
     }
 

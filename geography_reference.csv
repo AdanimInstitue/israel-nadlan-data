@@ -57,7 +57,7 @@ DIST_TA,district,,TEL_AVIV,מחוז תל אביב,Tel Aviv District,מחוז ת�
 1095,locality,1095,,כפר מימון,KEFAR MAYMON,הדרום,South,,data.gov.il,true
 1098,locality,1098,,מרכז שפירא,MERKAZ SHAPPIRA,הדרום,South,,data.gov.il,true
 11,locality,11,,ניר חן,NIR HEN,הדרום,South,,data.gov.il,true
-1102,locality,1102,,צוקי ים,SHOSHANNAT HAAMAQIM(,המרכז,Center,,data.gov.il,true
+1102,locality,1102,,צוקי ים,,המרכז,Center,,data.gov.il,true
 1103,locality,1103,,גני הדר,GANNE HADAR,המרכז,Center,,data.gov.il,true
 1104,locality,1104,,פוריה - כפר עבודה,PORIYYA-KEFAR AVODA,הצפון,North,,data.gov.il,true
 1105,locality,1105,,פוריה - נווה עובד,PORIYYA-NEWE OVED,הצפון,North,,data.gov.il,true

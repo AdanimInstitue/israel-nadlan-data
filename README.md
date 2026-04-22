@@ -15,11 +15,11 @@ The repository packages one main fact table plus supporting metadata:
 
 ## Current Release Snapshot
 
-This patch prepares the next breaking schema release after `v0.1.0`.
+This repository now reflects the `v0.2.0` public dataset release after the breaking schema transition from `v0.1.0`.
 
 | Field | Value |
 | --- | --- |
-| Recommended release version | `v0.2.0` |
+| Release version | `v0.2.0` |
 | Schema version | `2.0.0` |
 | Patch date | `2026-04-22` |
 | Collector repo | `AdanimInstitue/israel-rent-data-collector` |
@@ -102,7 +102,7 @@ For the release metadata, see [manifest.json](manifest.json).
 
 ## Breaking Change From `v0.1.0`
 
-This patch is a breaking schema revision intended for `v0.2.0`.
+This is the `v0.2.0` breaking schema revision from `v0.1.0`.
 
 - `rent_nis` was replaced by `value_nis`
 - dead value columns were removed
@@ -118,7 +118,7 @@ Migration details are documented in [SCHEMA.md](SCHEMA.md).
 
 Recommended short citation:
 
-> Adanim Institute. israel-rent-data, release candidate for v0.2.0, accessed 2026-04-22. Derived from official/public Israeli housing-rent sources with source-specific terms and attribution obligations.
+> Adanim Institute. israel-rent-data, v0.2.0, accessed 2026-04-22. Derived from official/public Israeli housing-rent sources with source-specific terms and attribution obligations.
 
 If publishing analysis or a derived dataset, also cite the relevant upstream sources listed in [SOURCES.md](SOURCES.md).
 

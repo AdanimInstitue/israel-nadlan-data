@@ -18,11 +18,11 @@ One row is one geography x room group x metric type x period x source observatio
 
 | Column | Type | Required | Description | Allowed values / examples |
 | --- | --- | --- | --- | --- |
-| `record_id` | string | yes | Stable row identifier for this published release schema. | `cbs_table49__DIST_TA__5plus__average_rent_published__2025-Q2` |
+| `record_id` | string | yes | Stable row identifier for this published release schema. Constructed as `<normalized source_id>__<geography_id>__<normalized room_group>__<metric_type>__<period_label>`, where `source_id` replaces `.` with `_` and `room_group` replaces `+` with `plus`. Other components are preserved as published in this release. | `cbs_table49__DIST_TA__5plus__average_rent_published__2025-Q2`, `nadlan_gov_il__5000__3__average_rent_published__2025-Q2` |
 | `geography_id` | string | yes | Canonical geography key used for joins. | locality code like `5000`, district pseudo-code like `DIST_TA` |
 | `geography_type` | enum | yes | Geography level. | `locality`, `district` |
 | `geography_name_he` | string | yes | Hebrew geography label used in the release. | `מחוז תל אביב` |
-| `geography_name_en` | string | yes | English geography label used in the release. | `Tel Aviv District` |
+| `geography_name_en` | string or null/blank | no | English geography label used in the release when available. Some locality rows currently have missing English labels in the upstream supporting metadata; consumers may fall back to `geography_name_he` for display when this field is blank. | `Tel Aviv District`, blank |
 | `room_group` | string | yes | Canonical room bucket. | `2`, `2.5`, `3`, `3.5`, `4`, `4.5`, `5`, `5+` |
 | `metric_type` | enum | yes | Meaning of `value_nis`. | `average_rent_published`, `hedonic_rent_estimate` |
 | `value_nis` | number | yes | Primary rent value in Israeli shekels. | `5100` |
@@ -65,6 +65,7 @@ One row is one geography x room group x metric type x period x source observatio
 - `period_quarter` is null for annual rows.
 - `source_release_date` and `source_accessed_at` are null when the public release does not pin a reliable per-row value.
 - `observations_count` is null when the source does not publish or the release does not carry through that count.
+- `geography_name_en` may be blank for some localities where the supporting public registry metadata does not provide a reliable English label.
 - Empty strings from `v0.1.0` were normalized to null-equivalent blank fields in CSV output.
 
 ## `geography_reference.csv`
@@ -80,7 +81,7 @@ Canonical geography dimension for every `geography_id` used in `rent_benchmarks.
 | `locality_code` | string or null | no | Original locality code when the row is a locality. | `5000` |
 | `district_code` | string or null | no | Canonical district code when the row is a district. | `TEL_AVIV` |
 | `geography_name_he` | string | yes | Hebrew geography label. | `תל אביב-יפו`, `מחוז תל אביב` |
-| `geography_name_en` | string | yes | English geography label. | `TEL AVIV-YAFO`, `Tel Aviv District` |
+| `geography_name_en` | string or null/blank | no | English geography label when available. Some localities currently have missing English labels in the supporting registry metadata; consumers may fall back to `geography_name_he` for display. | `TEL AVIV-YAFO`, `Tel Aviv District`, blank |
 | `district_he` | string or null | no | Parent district name in Hebrew. | `מחוז תל אביב` |
 | `district_en` | string or null | no | Parent district name in English. | `Tel Aviv` |
 | `population_approx` | integer or null | no | Approximate population when carried through from the locality registry. | null in many current rows |

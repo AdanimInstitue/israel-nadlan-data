@@ -6,13 +6,13 @@ This file provides reusable attribution language for this repository. It is a ba
 
 Recommended short-form attribution for dashboards, notebooks, and quick visualizations:
 
-> Source: Adanim Institute, `israel-rent-data` (release candidate for v0.2.0), compiling and normalizing official/public Israeli rent indicators from multiple upstream sources. Source-specific terms and attribution obligations remain applicable.
+> Source: Adanim Institute, `israel-rent-data` (`v0.2.0`), compiling and normalizing official/public Israeli rent indicators from multiple upstream sources. Source-specific terms and attribution obligations remain applicable.
 
 ## Full Attribution
 
 Recommended long-form attribution for reports, research papers, and derived datasets:
 
-> This analysis uses the Adanim Institute `israel-rent-data` repository, release candidate for v0.2.0, which compiles and normalizes benchmark rent observations from multiple official or public upstream Israeli sources, including the Israeli government real-estate portal (`nadlan.gov.il`), Central Bureau of Statistics Table 4.9, Bank of Israel source material used for modeled hedonic estimates, and supporting locality metadata from data.gov.il / CBS. The repository documents source-specific terms and attribution notes in `SOURCES.md` and does not claim to override upstream rights.
+> This analysis uses the Adanim Institute `israel-rent-data` repository, `v0.2.0`, which compiles and normalizes benchmark rent observations from multiple official or public upstream Israeli sources, including the Israeli government real-estate portal (`nadlan.gov.il`), Central Bureau of Statistics Table 4.9, Bank of Israel source material used for modeled hedonic estimates, and supporting locality metadata from data.gov.il / CBS. The repository documents source-specific terms and attribution notes in `SOURCES.md` and does not claim to override upstream rights.
 
 ## Source-Specific Notes
 

@@ -28,7 +28,8 @@
     "Replaced ambiguous multi-value columns with a single value_nis column plus explicit metric_type.",
     "Added geography_reference.csv as the canonical geography dimension covering both localities and districts.",
     "Added rights, attribution, methodology, QA, and limitations documentation.",
-    "Removed internal absolute workstation paths from public provenance metadata."
+    "Removed internal absolute workstation paths from public provenance metadata.",
+    "Clarified record_id normalization rules, nullable English geography labels, and fact-source naming in manifest metadata."
   ],
   "compatibility_notes": [
     "locality_crosswalk.csv is retained as a locality-only compatibility artifact and is not the canonical geography dimension.",
@@ -42,7 +43,6 @@
       "locality": 1306,
       "district": 6
     },
-    "distinct_sources": 3,
     "period_labels": {
       "2025": 10117,
       "2025-Q2": 354,
@@ -53,7 +53,8 @@
       "average_rent_published": 355
     },
     "record_id_unique": true,
-    "null_value_nis_rows": 0
+    "null_value_nis_rows": 0,
+    "distinct_fact_sources": 3
   },
   "source_catalog_summary": {
     "sources": [
@@ -89,7 +90,7 @@
   },
   "files": {
     "rent_benchmarks.csv": {
-      "sha256": "2f59cbf649896e2e3fea7d56648b4301142e72ed892a676e5a711b741ca023fe",
+      "sha256": "6b2acd5457c1d09481f117016582d2d0c9a71eeab6268f847f67b2435dc5ff7c",
       "rows": 10472,
       "columns": [
         "record_id",
@@ -129,7 +130,7 @@
       }
     },
     "geography_reference.csv": {
-      "sha256": "81f4720f37e3d79f7c66dbba492f5498ff3a3f3283ff0755aaab306436af0558",
+      "sha256": "784a7cde8984fee69eaae479e77ed6591865c39524514e7c5a03b5aeb257fb6c",
       "rows": 1312,
       "columns": [
         "geography_id",
@@ -150,7 +151,7 @@
       }
     },
     "locality_crosswalk.csv": {
-      "sha256": "702e9ca4311b0e429fd3d3d6949f0c3ce5599ced48ab7d062d03a770313bae80",
+      "sha256": "5bf60a7b1cccc68c94b79e87b9be64bb3c942ddcafc76879b017de5aa2d772f3",
       "rows": 1306,
       "columns": [
         "locality_code",
@@ -164,7 +165,7 @@
       "scope_note": "Compatibility-only locality lookup; not canonical for district rows."
     },
     "README.md": {
-      "sha256": "e441358d91228b10295c8d88035d716458ae670347ce15e43a2ed8db3a686799"
+      "sha256": "1966542844ead14bc2c873a9db4022a6269d02e92cbfd1694b0b076aa50cb1c8"
     },
     "DATA-LICENSE.md": {
       "sha256": "36203efe52429f71865451a2f28aa78ef4778b6dbf4b2016bb0ed3df1cde590f"
@@ -173,10 +174,10 @@
       "sha256": "ce432a3cfa82450ad456c67d7bbdd0f77762d14965ea93534349554ea3684aaf"
     },
     "ATTRIBUTION.md": {
-      "sha256": "c0471c70dc9ba43fb46d95bd1c5ff259a56c8ed07e636434c3d21878d205044d"
+      "sha256": "a015c6f72503fd672cf68ae7451ec7f4532daec3999a072b40e1e5543cbc5858"
     },
     "SCHEMA.md": {
-      "sha256": "3a132fd009da278cb2cecce8ec31789a95bd7e1fc6cee6dd9575bc26a5d44bff"
+      "sha256": "1e37702dc995bab8255ef330365b59885df48eda101b63639a9062a657931ac4"
     },
     "METHODOLOGY.md": {
       "sha256": "dbc221af288bada70ca62a9813821a40a3b0a5d41f9d1e63096c999106208455"
