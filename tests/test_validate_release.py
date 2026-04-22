@@ -9,7 +9,7 @@ from scripts import build_release_metadata as brm
 from scripts import validate_release as vr
 
 
-def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, object]]) -> None:
+def write_fixture_csv(path: Path, fieldnames: list[str], rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -27,7 +27,7 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
     manifest = tmp_path / "metadata" / "manifest.json"
     release_files = tmp_path / "metadata" / "release_files.csv"
 
-    write_csv(
+    write_fixture_csv(
         fact,
         ["record_id", "geography_id", "geography_type", "metric_type", "value_nis", "period_type", "source_id"],
         [
@@ -42,17 +42,17 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
             }
         ],
     )
-    write_csv(
+    write_fixture_csv(
         geo,
         ["geography_id"],
         [{"geography_id": "1000"}],
     )
-    write_csv(
+    write_fixture_csv(
         cross,
         ["locality_code"],
         [{"locality_code": "1000"}],
     )
-    write_csv(
+    write_fixture_csv(
         release_fact,
         ["record_id", "geography_id", "geography_type", "metric_type", "value_nis", "period_type", "source_id"],
         [
@@ -67,8 +67,8 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
             }
         ],
     )
-    write_csv(release_geo, ["geography_id"], [{"geography_id": "1000"}])
-    write_csv(release_cross, ["locality_code"], [{"locality_code": "1000"}])
+    write_fixture_csv(release_geo, ["geography_id"], [{"geography_id": "1000"}])
+    write_fixture_csv(release_cross, ["locality_code"], [{"locality_code": "1000"}])
     manifest.parent.mkdir(parents=True, exist_ok=True)
     manifest.write_text(
         json.dumps(
@@ -95,7 +95,7 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
                 "rows": rows,
             }
         )
-    write_csv(release_files, ["path", "sha256", "bytes", "rows"], release_file_rows)
+    write_fixture_csv(release_files, ["path", "sha256", "bytes", "rows"], release_file_rows)
 
     monkeypatch.setattr(vr, "ROOT", tmp_path)
     monkeypatch.setattr(vr, "FACT_PATH", fact)
@@ -140,7 +140,7 @@ def test_release_validation_reports_absolute_release_file_paths(
     tmp_path: Path, monkeypatch
 ) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
-    write_csv(
+    write_fixture_csv(
         vr.RELEASE_FILES_PATH,
         ["path", "sha256", "bytes", "rows"],
         [
@@ -214,7 +214,7 @@ def test_contains_absolute_path_handles_nested_structures() -> None:
 
 def test_release_validation_reports_dataset_shape_errors(tmp_path: Path, monkeypatch) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
-    write_csv(
+    write_fixture_csv(
         vr.FACT_PATH,
         [
             "record_id",
@@ -259,7 +259,7 @@ def test_release_validation_reports_dataset_shape_errors(tmp_path: Path, monkeyp
 
 def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monkeypatch) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
-    write_csv(
+    write_fixture_csv(
         vr.RELEASE_FILES_PATH,
         ["path", "sha256", "bytes", "rows"],
         [{"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent", "bytes": "1", "rows": "1"}],
@@ -285,7 +285,7 @@ def test_release_validation_reports_missing_required_columns(
     tmp_path: Path, monkeypatch
 ) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
-    write_csv(vr.FACT_PATH, ["record_id"], [{"record_id": "r1"}])
+    write_fixture_csv(vr.FACT_PATH, ["record_id"], [{"record_id": "r1"}])
 
     errors = vr.validate_release()
 
@@ -379,7 +379,7 @@ def test_build_release_files_and_manifest_helpers(tmp_path: Path, monkeypatch) -
 
 def test_release_validation_reports_snapshot_mismatch(tmp_path: Path, monkeypatch) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
-    write_csv(
+    write_fixture_csv(
         vr.RELEASE_FILES_PATH,
         ["path", "sha256", "bytes", "rows"],
         [

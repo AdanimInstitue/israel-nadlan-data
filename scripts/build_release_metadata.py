@@ -146,16 +146,20 @@ def build_manifest(
     schema_version: str = SCHEMA_VERSION,
     release_date: str = RELEASE_DATE,
 ) -> dict[str, object]:
-    row_counts = {Path(row["path"]).name: int(row["rows"]) for row in release_files}
+    current_row_counts = {
+        Path(str(row["path"])).name: int(row["rows"])
+        for row in release_files
+        if str(row["path"]).startswith("data/current/")
+    }
     return {
         "dataset_name": "israel-nadlan-data",
         "release_version": release_version,
         "release_date": release_date,
         "schema_version": schema_version,
         "data_quality_summary": {
-            "fact_rows": row_counts["rent_benchmarks.csv"],
-            "geography_rows": row_counts["geography_reference.csv"],
-            "locality_crosswalk_rows": row_counts["locality_crosswalk.csv"],
+            "fact_rows": current_row_counts["rent_benchmarks.csv"],
+            "geography_rows": current_row_counts["geography_reference.csv"],
+            "locality_crosswalk_rows": current_row_counts["locality_crosswalk.csv"],
         },
         "files": release_files,
     }
