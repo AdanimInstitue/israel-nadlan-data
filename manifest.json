@@ -1,0 +1,50 @@
+{
+  "version": "v0.1.0",
+  "published_at": "2026-04-22",
+  "data_repo": {
+    "repository": "AdanimInstitue/israel-rent-data"
+  },
+  "collector_repo": {
+    "repository": "AdanimInstitue/israel-rent-data-collector",
+    "validated_run_commit": "0cdfd6210156263cbbf260b76b869a3a3fc68ba4",
+    "current_branch_commit": "2dd964cbdc8384aa114d463c673e898b51c607e5",
+    "run_dir": "/Users/shaypalachy/Documents/Claude/Projects/adanim_normative_rent/israel-rent-data-collector/var/runs/2026-04-21T18-54-55Z",
+    "command": [
+      "rent-collector",
+      "--source",
+      "all",
+      "--output",
+      "data/output/rent_benchmarks.csv",
+      "--validate"
+    ],
+    "started_at": "2026-04-21T18:54:55.793932+00:00",
+    "finished_at": "2026-04-21T19:21:09.659039+00:00",
+    "duration_seconds": 1573.865,
+    "status": "success"
+  },
+  "files": {
+    "rent_benchmarks.csv": {
+      "rows": 10472,
+      "localities": 1312,
+      "sha256": "195997b7dc48ed879698f0d50e5cb0c80a6e7e835162f879ddcfb76afc03dab9",
+      "sources": {
+        "boi_hedonic": 10117,
+        "nadlan.gov.il": 297,
+        "cbs_table49": 58
+      }
+    },
+    "locality_crosswalk.csv": {
+      "rows": 1306,
+      "sha256": "bba507b72170b36c2e864cbd215868e5a9af9368cc822899608c8dac880ecc83",
+      "columns": [
+        "locality_code",
+        "locality_name_he",
+        "locality_name_en",
+        "district_he",
+        "district_en",
+        "population_approx",
+        "source"
+      ]
+    }
+  }
+}
