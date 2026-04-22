@@ -38,6 +38,13 @@ def csv_row_count(path: Path) -> int:
         return sum(1 for _ in csv.DictReader(handle))
 
 
+def relative_display_path(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.name
+
+
 def contains_absolute_path(value: object) -> bool:
     if isinstance(value, str):
         return PurePosixPath(value).is_absolute() or PureWindowsPath(value).is_absolute()
@@ -58,7 +65,8 @@ def validate_release() -> list[str]:
         locality_rows = read_csv(LOCALITY_CROSSWALK_PATH)
         release_files = read_csv(RELEASE_FILES_PATH)
     except FileNotFoundError as exc:
-        return [f"required release file is missing: {exc.filename}"]
+        filename = Path(exc.filename) if exc.filename else FACT_PATH
+        return [f"required release file is missing: {relative_display_path(filename)}"]
     except OSError as exc:
         return [f"failed to read release files: {exc}"]
 
@@ -145,6 +153,9 @@ def validate_release() -> list[str]:
         actual_path = ROOT / relative_path
         release_entry = next((row for row in release_files if row["path"] == relative_path), None)
         if release_entry is None:
+            continue
+        if not actual_path.exists():
+            errors.append(f"missing file on disk: {relative_path}")
             continue
 
         expected_bytes = str(actual_path.stat().st_size)

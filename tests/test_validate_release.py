@@ -85,12 +85,14 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
     )
     release_file_rows = []
     for path in [fact, geo, cross, release_fact, release_geo, release_cross]:
+        with path.open(encoding="utf-8", newline="") as handle:
+            rows = len(list(csv.DictReader(handle)))
         release_file_rows.append(
             {
                 "path": path.relative_to(tmp_path).as_posix(),
                 "sha256": brm.sha256(path),
                 "bytes": path.stat().st_size,
-                "rows": len(list(csv.DictReader(path.open(encoding="utf-8", newline="")))),
+                "rows": rows,
             }
         )
     write_csv(release_files, ["path", "sha256", "bytes", "rows"], release_file_rows)
@@ -189,6 +191,17 @@ def test_release_validation_reports_invalid_manifest_json(
     assert vr.validate_release() == ["metadata/manifest.json is not valid JSON"]
 
 
+def test_release_validation_reports_missing_file_without_absolute_path(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    vr.FACT_PATH.unlink()
+
+    assert vr.validate_release() == [
+        "required release file is missing: data/current/rent_benchmarks.csv"
+    ]
+
+
 def test_contains_absolute_path_handles_nested_structures() -> None:
     assert vr.contains_absolute_path(
         {"files": [{"path": "C:\\temp\\internal.csv"}], "extra": ["relative/path.csv"]}
@@ -253,6 +266,17 @@ def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monk
     errors = vr.validate_release()
 
     assert "release_files.csv is missing one or more canonical file paths" in errors
+
+
+def test_release_validation_reports_missing_snapshot_file_on_disk(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    (tmp_path / "data" / "releases" / "v0.2.0" / "rent_benchmarks.csv").unlink()
+
+    errors = vr.validate_release()
+
+    assert "missing file on disk: data/releases/v0.2.0/rent_benchmarks.csv" in errors
 
 
 def test_build_summary_reads_fixture_contents(tmp_path: Path, monkeypatch) -> None:
