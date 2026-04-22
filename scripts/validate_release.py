@@ -84,14 +84,16 @@ def validate_release() -> list[str]:
 
     try:
         quality_summary = manifest["data_quality_summary"]
+        release_version = str(manifest["release_version"])
         expected_fact_rows = quality_summary["fact_rows"]
         expected_geo_rows = quality_summary["geography_rows"]
         expected_crosswalk_rows = quality_summary["locality_crosswalk_rows"]
     except (KeyError, TypeError):
-        errors.append("manifest.json is missing required data_quality_summary fields")
+        errors.append("manifest.json is missing required release metadata fields")
         quality_summary = None
+        release_version = None
 
-    if quality_summary is None:
+    if quality_summary is None or release_version is None:
         return errors
 
     if expected_fact_rows != len(fact_rows):
@@ -105,12 +107,25 @@ def validate_release() -> list[str]:
         "data/current/rent_benchmarks.csv",
         "data/current/geography_reference.csv",
         "data/current/locality_crosswalk.csv",
+        f"data/releases/{release_version}/rent_benchmarks.csv",
+        f"data/releases/{release_version}/geography_reference.csv",
+        f"data/releases/{release_version}/locality_crosswalk.csv",
     }
     actual_paths = {row["path"] for row in release_files}
     if expected_paths - actual_paths:
         errors.append("release_files.csv is missing one or more canonical file paths")
     if any(contains_absolute_path(row["path"]) for row in release_files):
         errors.append("release_files.csv contains absolute paths")
+
+    for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
+        current_path = f"data/current/{name}"
+        snapshot_path = f"data/releases/{release_version}/{name}"
+        current_entry = next((row for row in release_files if row["path"] == current_path), None)
+        snapshot_entry = next((row for row in release_files if row["path"] == snapshot_path), None)
+        if current_entry and snapshot_entry and current_entry.get("sha256") != snapshot_entry.get(
+            "sha256"
+        ):
+            errors.append(f"release snapshot does not match current file for {name}")
 
     return errors
 

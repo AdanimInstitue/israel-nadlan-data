@@ -21,6 +21,9 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
     fact = tmp_path / "data" / "current" / "rent_benchmarks.csv"
     geo = tmp_path / "data" / "current" / "geography_reference.csv"
     cross = tmp_path / "data" / "current" / "locality_crosswalk.csv"
+    release_fact = tmp_path / "data" / "releases" / "v0.2.0" / "rent_benchmarks.csv"
+    release_geo = tmp_path / "data" / "releases" / "v0.2.0" / "geography_reference.csv"
+    release_cross = tmp_path / "data" / "releases" / "v0.2.0" / "locality_crosswalk.csv"
     manifest = tmp_path / "metadata" / "manifest.json"
     release_files = tmp_path / "metadata" / "release_files.csv"
 
@@ -49,10 +52,28 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
         ["locality_code"],
         [{"locality_code": "1000"}],
     )
+    write_csv(
+        release_fact,
+        ["record_id", "geography_id", "geography_type", "metric_type", "value_nis", "period_type", "source_id"],
+        [
+            {
+                "record_id": "r1",
+                "geography_id": "1000",
+                "geography_type": "locality",
+                "metric_type": "average_rent_published",
+                "value_nis": "5000",
+                "period_type": "quarterly",
+                "source_id": "nadlan.gov.il",
+            }
+        ],
+    )
+    write_csv(release_geo, ["geography_id"], [{"geography_id": "1000"}])
+    write_csv(release_cross, ["locality_code"], [{"locality_code": "1000"}])
     manifest.parent.mkdir(parents=True, exist_ok=True)
     manifest.write_text(
         json.dumps(
             {
+                "release_version": "v0.2.0",
                 "data_quality_summary": {
                     "fact_rows": 1,
                     "geography_rows": 1,
@@ -64,11 +85,17 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
     )
     write_csv(
         release_files,
-        ["path"],
+        ["path", "sha256"],
         [
-            {"path": "data/current/rent_benchmarks.csv"},
-            {"path": "data/current/geography_reference.csv"},
-            {"path": "data/current/locality_crosswalk.csv"},
+            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"},
+            {"path": "data/current/geography_reference.csv", "sha256": "same-geo"},
+            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross"},
+            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "same-rent"},
+            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo"},
+            {
+                "path": "data/releases/v0.2.0/locality_crosswalk.csv",
+                "sha256": "same-cross",
+            },
         ],
     )
 
@@ -92,6 +119,7 @@ def test_release_validation_reports_path_and_count_errors(tmp_path: Path, monkey
     vr.MANIFEST_PATH.write_text(
         json.dumps(
             {
+                "release_version": "v0.2.0",
                 "data_quality_summary": {
                     "fact_rows": 2,
                     "geography_rows": 2,
@@ -115,12 +143,18 @@ def test_release_validation_reports_absolute_release_file_paths(
     install_fixture_repo(tmp_path, monkeypatch)
     write_csv(
         vr.RELEASE_FILES_PATH,
-        ["path"],
+        ["path", "sha256"],
         [
-            {"path": "data/current/rent_benchmarks.csv"},
-            {"path": "data/current/geography_reference.csv"},
-            {"path": "data/current/locality_crosswalk.csv"},
-            {"path": "C:\\temp\\internal.csv"},
+            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"},
+            {"path": "data/current/geography_reference.csv", "sha256": "same-geo"},
+            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross"},
+            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "same-rent"},
+            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo"},
+            {
+                "path": "data/releases/v0.2.0/locality_crosswalk.csv",
+                "sha256": "same-cross",
+            },
+            {"path": "C:\\temp\\internal.csv", "sha256": "other"},
         ],
     )
 
@@ -137,7 +171,7 @@ def test_release_validation_reports_missing_quality_summary(
 
     errors = vr.validate_release()
 
-    assert "manifest.json is missing required data_quality_summary fields" in errors
+    assert "manifest.json is missing required release metadata fields" in errors
 
 
 def test_release_validation_reports_missing_manifest_file(
@@ -215,8 +249,8 @@ def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monk
     install_fixture_repo(tmp_path, monkeypatch)
     write_csv(
         vr.RELEASE_FILES_PATH,
-        ["path"],
-        [{"path": "data/current/rent_benchmarks.csv"}],
+        ["path", "sha256"],
+        [{"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"}],
     )
 
     errors = vr.validate_release()
@@ -266,6 +300,9 @@ def test_build_release_metadata_main_writes_expected_outputs(
         "data/current/rent_benchmarks.csv",
         "data/current/geography_reference.csv",
         "data/current/locality_crosswalk.csv",
+        "data/releases/v0.2.0/rent_benchmarks.csv",
+        "data/releases/v0.2.0/geography_reference.csv",
+        "data/releases/v0.2.0/locality_crosswalk.csv",
     ]
 
     source_inventory = list(
@@ -293,11 +330,37 @@ def test_build_release_files_and_manifest_helpers(tmp_path: Path, monkeypatch) -
         "data/current/rent_benchmarks.csv",
         "data/current/geography_reference.csv",
         "data/current/locality_crosswalk.csv",
+        "data/releases/v0.2.0/rent_benchmarks.csv",
+        "data/releases/v0.2.0/geography_reference.csv",
+        "data/releases/v0.2.0/locality_crosswalk.csv",
     ]
     assert all(row["release_version"] == brm.RELEASE_VERSION for row in release_files)
     assert manifest["release_version"] == brm.RELEASE_VERSION
     assert manifest["schema_version"] == brm.SCHEMA_VERSION
     assert manifest["data_quality_summary"]["fact_rows"] == 1
+
+
+def test_release_validation_reports_snapshot_mismatch(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    write_csv(
+        vr.RELEASE_FILES_PATH,
+        ["path", "sha256"],
+        [
+            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"},
+            {"path": "data/current/geography_reference.csv", "sha256": "same-geo"},
+            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross"},
+            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "other-rent"},
+            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo"},
+            {
+                "path": "data/releases/v0.2.0/locality_crosswalk.csv",
+                "sha256": "same-cross",
+            },
+        ],
+    )
+
+    errors = vr.validate_release()
+
+    assert "release snapshot does not match current file for rent_benchmarks.csv" in errors
 
 
 def test_build_data_dictionary_and_source_inventory(tmp_path: Path, monkeypatch) -> None:

@@ -39,23 +39,29 @@ def csv_header(path: Path) -> list[str]:
         return list(csv.DictReader(handle).fieldnames or [])
 
 
+def release_snapshot_dir(release_version: str) -> Path:
+    return ROOT / "data" / "releases" / release_version
+
+
 def build_release_files(
     *, release_version: str = RELEASE_VERSION, schema_version: str = SCHEMA_VERSION
 ) -> list[dict[str, object]]:
     rows = []
-    for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
-        path = CURRENT_DIR / name
-        csv_rows = read_csv(path)
-        rows.append(
-            {
-                "release_version": release_version,
-                "path": path.relative_to(ROOT).as_posix(),
-                "sha256": sha256(path),
-                "bytes": path.stat().st_size,
-                "rows": len(csv_rows),
-                "schema_version": schema_version,
-            }
-        )
+    snapshot_dir = release_snapshot_dir(release_version)
+    for base_dir in [CURRENT_DIR, snapshot_dir]:
+        for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
+            path = base_dir / name
+            csv_rows = read_csv(path)
+            rows.append(
+                {
+                    "release_version": release_version,
+                    "path": path.relative_to(ROOT).as_posix(),
+                    "sha256": sha256(path),
+                    "bytes": path.stat().st_size,
+                    "rows": len(csv_rows),
+                    "schema_version": schema_version,
+                }
+            )
     return rows
 
 
