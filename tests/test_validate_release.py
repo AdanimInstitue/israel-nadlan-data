@@ -127,6 +127,17 @@ def test_release_validation_reports_absolute_release_file_paths(
     assert "release_files.csv contains absolute paths" in errors
 
 
+def test_release_validation_reports_missing_quality_summary(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    vr.MANIFEST_PATH.write_text(json.dumps({}), encoding="utf-8")
+
+    errors = vr.validate_release()
+
+    assert "manifest.json is missing required data_quality_summary fields" in errors
+
+
 def test_main_returns_zero_for_clean_fixture(tmp_path: Path, monkeypatch, capsys) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
     monkeypatch.setattr("sys.argv", ["validate_release.py", "--check"])

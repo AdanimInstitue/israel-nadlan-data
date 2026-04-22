@@ -66,9 +66,18 @@ def validate_release() -> list[str]:
     if contains_absolute_path(manifest):
         errors.append("metadata manifest contains internal absolute paths")
 
-    expected_fact_rows = manifest["data_quality_summary"]["fact_rows"]
-    expected_geo_rows = manifest["data_quality_summary"]["geography_rows"]
-    expected_crosswalk_rows = manifest["data_quality_summary"]["locality_crosswalk_rows"]
+    try:
+        quality_summary = manifest["data_quality_summary"]
+        expected_fact_rows = quality_summary["fact_rows"]
+        expected_geo_rows = quality_summary["geography_rows"]
+        expected_crosswalk_rows = quality_summary["locality_crosswalk_rows"]
+    except (KeyError, TypeError):
+        errors.append("manifest.json is missing required data_quality_summary fields")
+        quality_summary = None
+
+    if quality_summary is None:
+        return errors
+
     if expected_fact_rows != len(fact_rows):
         errors.append("manifest fact row count does not match rent_benchmarks.csv")
     if expected_geo_rows != len(geography_rows):
