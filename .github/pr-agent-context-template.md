@@ -1,4 +1,4 @@
-Repository: `AdanimInstitue/israel-rent-data`
+Repository: `AdanimInstitue/israel-nadlan-data`
 
 This repository is a public data product. Prioritize:
 - rights and attribution clarity

@@ -2,17 +2,30 @@
 
 Public dataset repository for Israeli housing-rent benchmark data.
 
-## Canonical Files
+## Core Tree
 
-- `data/current/rent_benchmarks.csv`
-- `data/current/geography_reference.csv`
-- `metadata/manifest.json`
-- `metadata/source_inventory.csv`
-- `metadata/data_dictionary.csv`
-- `metadata/release_files.csv`
+```text
+data/
+  current/
+  releases/v0.2.0/
+metadata/
+  manifest.json
+  source_inventory.csv
+  data_dictionary.csv
+  release_files.csv
+docs/
+scripts/
+tests/
+```
 
-## Interpretation
+## Key Pointers
 
-- One row is one benchmark observation.
-- Check `metric_type`, `geography_type`, and period fields before comparison.
-- The dataset is not a live listings feed.
+- Main fact table: `data/current/rent_benchmarks.csv`
+- Geography dimension: `data/current/geography_reference.csv`
+- Compatibility crosswalk: `data/current/locality_crosswalk.csv`
+- Release manifest: `metadata/manifest.json`
+- File checksums and row counts: `metadata/release_files.csv`
+- Column dictionary: `metadata/data_dictionary.csv`
+- Source inventory: `metadata/source_inventory.csv`
+- Metadata generation: `scripts/build_release_metadata.py`
+- Validation: `scripts/validate_release.py`
