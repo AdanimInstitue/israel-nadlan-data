@@ -83,22 +83,19 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
         ),
         encoding="utf-8",
     )
-    write_csv(
-        release_files,
-        ["path", "sha256"],
-        [
-            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"},
-            {"path": "data/current/geography_reference.csv", "sha256": "same-geo"},
-            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross"},
-            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "same-rent"},
-            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo"},
+    release_file_rows = []
+    for path in [fact, geo, cross, release_fact, release_geo, release_cross]:
+        release_file_rows.append(
             {
-                "path": "data/releases/v0.2.0/locality_crosswalk.csv",
-                "sha256": "same-cross",
-            },
-        ],
-    )
+                "path": path.relative_to(tmp_path).as_posix(),
+                "sha256": brm.sha256(path),
+                "bytes": path.stat().st_size,
+                "rows": len(list(csv.DictReader(path.open(encoding="utf-8", newline="")))),
+            }
+        )
+    write_csv(release_files, ["path", "sha256", "bytes", "rows"], release_file_rows)
 
+    monkeypatch.setattr(vr, "ROOT", tmp_path)
     monkeypatch.setattr(vr, "FACT_PATH", fact)
     monkeypatch.setattr(vr, "GEOGRAPHY_PATH", geo)
     monkeypatch.setattr(vr, "LOCALITY_CROSSWALK_PATH", cross)

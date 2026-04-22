@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -22,6 +23,19 @@ VALID_PERIOD_TYPES = {"annual", "quarterly"}
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def sha256(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(8192), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def csv_row_count(path: Path) -> int:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return sum(1 for _ in csv.DictReader(handle))
 
 
 def contains_absolute_path(value: object) -> bool:
@@ -126,6 +140,22 @@ def validate_release() -> list[str]:
             "sha256"
         ):
             errors.append(f"release snapshot does not match current file for {name}")
+
+    for relative_path in sorted(expected_paths):
+        actual_path = ROOT / relative_path
+        release_entry = next((row for row in release_files if row["path"] == relative_path), None)
+        if release_entry is None:
+            continue
+
+        expected_bytes = str(actual_path.stat().st_size)
+        expected_rows = str(csv_row_count(actual_path))
+        expected_sha = sha256(actual_path)
+        if release_entry.get("bytes") != expected_bytes:
+            errors.append(f"release_files.csv bytes mismatch for {relative_path}")
+        if release_entry.get("rows") != expected_rows:
+            errors.append(f"release_files.csv row count mismatch for {relative_path}")
+        if release_entry.get("sha256") != expected_sha:
+            errors.append(f"release_files.csv sha256 mismatch for {relative_path}")
 
     return errors
 
