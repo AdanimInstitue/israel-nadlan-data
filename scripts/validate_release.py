@@ -205,8 +205,7 @@ def validate_release() -> list[str]:
     for relative_path in sorted(expected_paths):
         actual_path = ROOT / relative_path
         release_entry = next((row for row in release_files if row["path"] == relative_path), None)
-        if release_entry is None:
-            continue
+        assert release_entry is not None
         if not actual_path.exists():
             errors.append(f"missing file on disk: {relative_path}")
             continue

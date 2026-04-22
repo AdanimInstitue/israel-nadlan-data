@@ -193,6 +193,14 @@ def install_fixture_repo(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(brm, "METADATA_DIR", tmp_path / "metadata")
 
 
+def rewrite_release_file_metadata(path: Path, rows: list[dict[str, object]]) -> None:
+    write_fixture_csv(
+        path,
+        ["release_version", "path", "sha256", "bytes", "rows", "schema_version"],
+        rows,
+    )
+
+
 def test_release_validation_passes(tmp_path: Path, monkeypatch) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
     assert vr.validate_release() == []
@@ -316,6 +324,10 @@ def test_release_validation_reports_missing_file_without_absolute_path(
     ]
 
 
+def test_relative_display_path_returns_basename_for_out_of_tree_path() -> None:
+    assert vr.relative_display_path(Path("/tmp/external.csv")) == "external.csv"
+
+
 def test_contains_absolute_path_handles_nested_structures() -> None:
     assert vr.contains_absolute_path(
         {"files": [{"path": "C:\\temp\\internal.csv"}], "extra": ["relative/path.csv"]}
@@ -391,6 +403,62 @@ def test_release_validation_reports_dataset_shape_errors(tmp_path: Path, monkeyp
     assert "locality_crosswalk.csv contains blank locality_code fields" in errors
 
 
+def test_release_validation_reports_blank_geography_id(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    geography_rows = [
+        {
+            "geography_id": "",
+            "geography_type": "district",
+            "locality_code": "",
+            "district_code": "CENTER",
+            "geography_name_he": "מחוז המרכז",
+            "geography_name_en": "Center District",
+            "district_he": "מחוז המרכז",
+            "district_en": "Center",
+            "population_approx": "",
+            "source": "cbs_table49",
+            "is_active": "true",
+        },
+        {
+            "geography_id": "1000",
+            "geography_type": "locality",
+            "locality_code": "1000",
+            "district_code": "CENTER",
+            "geography_name_he": "מבשרת ציון",
+            "geography_name_en": "MEVASSERET ZIYYON",
+            "district_he": "מחוז המרכז",
+            "district_en": "Center",
+            "population_approx": "12000",
+            "source": "cbs_table49",
+            "is_active": "true",
+        },
+    ]
+    write_fixture_csv(vr.GEOGRAPHY_PATH, GEOGRAPHY_HEADER, geography_rows)
+    write_fixture_csv(
+        tmp_path / "data" / "releases" / "v0.2.0" / "geography_reference.csv",
+        GEOGRAPHY_HEADER,
+        geography_rows,
+    )
+
+    with vr.RELEASE_FILES_PATH.open(encoding="utf-8", newline="") as handle:
+        release_files = list(csv.DictReader(handle))
+    for row in release_files:
+        if row["path"] in {
+            "data/current/geography_reference.csv",
+            "data/releases/v0.2.0/geography_reference.csv",
+        }:
+            file_path = tmp_path / row["path"]
+            row["sha256"] = brm.sha256(file_path)
+            row["bytes"] = str(file_path.stat().st_size)
+            with file_path.open(encoding="utf-8", newline="") as handle:
+                row["rows"] = str(sum(1 for _ in csv.DictReader(handle)))
+    rewrite_release_file_metadata(vr.RELEASE_FILES_PATH, release_files)
+
+    errors = vr.validate_release()
+
+    assert "geography_reference.csv contains blank geography_id fields" in errors
+
+
 def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monkeypatch) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
     write_fixture_csv(
@@ -428,6 +496,32 @@ def test_release_validation_reports_duplicate_release_file_paths(
     errors = vr.validate_release()
 
     assert "release_files.csv contains duplicate path rows" in errors
+
+
+def test_release_validation_reports_release_file_read_errors(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    original_read_csv = vr.read_csv
+
+    def raise_for_release_files(path: Path) -> list[dict[str, str]]:
+        if path == vr.RELEASE_FILES_PATH:
+            raise OSError("release files unavailable")
+        return original_read_csv(path)
+
+    monkeypatch.setattr(vr, "read_csv", raise_for_release_files)
+
+    assert vr.validate_release() == ["failed to read release files: release files unavailable"]
+
+
+def test_release_validation_reports_manifest_read_errors(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+
+    class BrokenManifest:
+        def read_text(self, encoding: str = "utf-8") -> str:
+            raise OSError("manifest unavailable")
+
+    monkeypatch.setattr(vr, "MANIFEST_PATH", BrokenManifest())
+
+    assert vr.validate_release() == ["failed to read metadata/manifest.json: manifest unavailable"]
 
 
 def test_release_validation_reports_missing_snapshot_file_on_disk(
