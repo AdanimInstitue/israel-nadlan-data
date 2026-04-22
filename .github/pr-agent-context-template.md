@@ -1,4 +1,4 @@
-Repository: `{{ github.repository }}`
+Repository under review.
 
 This repository is a public data product. Prioritize:
 - rights and attribution clarity
