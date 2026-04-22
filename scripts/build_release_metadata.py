@@ -43,6 +43,11 @@ def csv_header(path: Path) -> list[str]:
         return list(csv.DictReader(handle).fieldnames or [])
 
 
+def csv_row_count(path: Path) -> int:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return sum(1 for _ in csv.DictReader(handle))
+
+
 def release_snapshot_dir(release_version: str) -> Path:
     return ROOT / "data" / "releases" / release_version
 
@@ -55,14 +60,13 @@ def build_release_files(
     for base_dir in [CURRENT_DIR, snapshot_dir]:
         for name in ["rent_benchmarks.csv", "geography_reference.csv", "locality_crosswalk.csv"]:
             path = base_dir / name
-            csv_rows = read_csv(path)
             rows.append(
                 {
                     "release_version": release_version,
                     "path": path.relative_to(ROOT).as_posix(),
                     "sha256": sha256(path),
                     "bytes": path.stat().st_size,
-                    "rows": len(csv_rows),
+                    "rows": csv_row_count(path),
                     "schema_version": schema_version,
                 }
             )
@@ -142,18 +146,16 @@ def build_manifest(
     schema_version: str = SCHEMA_VERSION,
     release_date: str = RELEASE_DATE,
 ) -> dict[str, object]:
-    fact_rows = read_csv(CURRENT_DIR / "rent_benchmarks.csv")
-    geo_rows = read_csv(CURRENT_DIR / "geography_reference.csv")
-    cross_rows = read_csv(CURRENT_DIR / "locality_crosswalk.csv")
+    row_counts = {Path(row["path"]).name: int(row["rows"]) for row in release_files}
     return {
         "dataset_name": "israel-nadlan-data",
         "release_version": release_version,
         "release_date": release_date,
         "schema_version": schema_version,
         "data_quality_summary": {
-            "fact_rows": len(fact_rows),
-            "geography_rows": len(geo_rows),
-            "locality_crosswalk_rows": len(cross_rows),
+            "fact_rows": row_counts["rent_benchmarks.csv"],
+            "geography_rows": row_counts["geography_reference.csv"],
+            "locality_crosswalk_rows": row_counts["locality_crosswalk.csv"],
         },
         "files": release_files,
     }

@@ -142,18 +142,20 @@ def test_release_validation_reports_absolute_release_file_paths(
     install_fixture_repo(tmp_path, monkeypatch)
     write_csv(
         vr.RELEASE_FILES_PATH,
-        ["path", "sha256"],
+        ["path", "sha256", "bytes", "rows"],
         [
-            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"},
-            {"path": "data/current/geography_reference.csv", "sha256": "same-geo"},
-            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross"},
-            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "same-rent"},
-            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo"},
+            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent", "bytes": "1", "rows": "1"},
+            {"path": "data/current/geography_reference.csv", "sha256": "same-geo", "bytes": "1", "rows": "1"},
+            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross", "bytes": "1", "rows": "1"},
+            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "same-rent", "bytes": "1", "rows": "1"},
+            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo", "bytes": "1", "rows": "1"},
             {
                 "path": "data/releases/v0.2.0/locality_crosswalk.csv",
                 "sha256": "same-cross",
+                "bytes": "1",
+                "rows": "1",
             },
-            {"path": "C:\\temp\\internal.csv", "sha256": "other"},
+            {"path": "C:\\temp\\internal.csv", "sha256": "other", "bytes": "1", "rows": "1"},
         ],
     )
 
@@ -259,8 +261,8 @@ def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monk
     install_fixture_repo(tmp_path, monkeypatch)
     write_csv(
         vr.RELEASE_FILES_PATH,
-        ["path", "sha256"],
-        [{"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"}],
+        ["path", "sha256", "bytes", "rows"],
+        [{"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent", "bytes": "1", "rows": "1"}],
     )
 
     errors = vr.validate_release()
@@ -277,6 +279,20 @@ def test_release_validation_reports_missing_snapshot_file_on_disk(
     errors = vr.validate_release()
 
     assert "missing file on disk: data/releases/v0.2.0/rent_benchmarks.csv" in errors
+
+
+def test_release_validation_reports_missing_required_columns(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    write_csv(vr.FACT_PATH, ["record_id"], [{"record_id": "r1"}])
+
+    errors = vr.validate_release()
+
+    assert (
+        "missing required columns in data/current/rent_benchmarks.csv: geography_id, "
+        "geography_type, metric_type, period_type, source_id, value_nis"
+    ) in errors
 
 
 def test_build_summary_reads_fixture_contents(tmp_path: Path, monkeypatch) -> None:
@@ -365,16 +381,18 @@ def test_release_validation_reports_snapshot_mismatch(tmp_path: Path, monkeypatc
     install_fixture_repo(tmp_path, monkeypatch)
     write_csv(
         vr.RELEASE_FILES_PATH,
-        ["path", "sha256"],
+        ["path", "sha256", "bytes", "rows"],
         [
-            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent"},
-            {"path": "data/current/geography_reference.csv", "sha256": "same-geo"},
-            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross"},
-            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "other-rent"},
-            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo"},
+            {"path": "data/current/rent_benchmarks.csv", "sha256": "same-rent", "bytes": "1", "rows": "1"},
+            {"path": "data/current/geography_reference.csv", "sha256": "same-geo", "bytes": "1", "rows": "1"},
+            {"path": "data/current/locality_crosswalk.csv", "sha256": "same-cross", "bytes": "1", "rows": "1"},
+            {"path": "data/releases/v0.2.0/rent_benchmarks.csv", "sha256": "other-rent", "bytes": "1", "rows": "1"},
+            {"path": "data/releases/v0.2.0/geography_reference.csv", "sha256": "same-geo", "bytes": "1", "rows": "1"},
             {
                 "path": "data/releases/v0.2.0/locality_crosswalk.csv",
                 "sha256": "same-cross",
+                "bytes": "1",
+                "rows": "1",
             },
         ],
     )

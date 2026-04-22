@@ -26,6 +26,9 @@ source = ["scripts"]
 [tool.setuptools]
 py-modules = []
 
+[tool.setuptools.packages.find]
+include = ["scripts"]
+
 [tool.coverage.report]
 show_missing = true
 skip_covered = false

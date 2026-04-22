@@ -18,11 +18,28 @@ RELEASE_FILES_PATH = ROOT / "metadata" / "release_files.csv"
 VALID_GEOGRAPHY_TYPES = {"locality", "district"}
 VALID_METRIC_TYPES = {"average_rent_published", "hedonic_rent_estimate"}
 VALID_PERIOD_TYPES = {"annual", "quarterly"}
+FACT_REQUIRED_COLUMNS = {
+    "record_id",
+    "geography_id",
+    "geography_type",
+    "metric_type",
+    "value_nis",
+    "period_type",
+    "source_id",
+}
+GEOGRAPHY_REQUIRED_COLUMNS = {"geography_id"}
+LOCALITY_REQUIRED_COLUMNS = {"locality_code"}
+RELEASE_FILES_REQUIRED_COLUMNS = {"path", "sha256", "bytes", "rows"}
 
 
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def csv_fieldnames(path: Path) -> list[str]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle).fieldnames or [])
 
 
 def sha256(path: Path) -> str:
@@ -43,6 +60,11 @@ def relative_display_path(path: Path) -> str:
         return path.relative_to(ROOT).as_posix()
     except ValueError:
         return path.name
+
+
+def missing_required_columns(path: Path, required: set[str]) -> list[str]:
+    fieldnames = set(csv_fieldnames(path))
+    return sorted(required - fieldnames)
 
 
 def contains_absolute_path(value: object) -> bool:
@@ -69,6 +91,23 @@ def validate_release() -> list[str]:
         return [f"required release file is missing: {relative_display_path(filename)}"]
     except OSError as exc:
         return [f"failed to read release files: {exc}"]
+
+    header_checks = [
+        (FACT_PATH, FACT_REQUIRED_COLUMNS),
+        (GEOGRAPHY_PATH, GEOGRAPHY_REQUIRED_COLUMNS),
+        (LOCALITY_CROSSWALK_PATH, LOCALITY_REQUIRED_COLUMNS),
+        (RELEASE_FILES_PATH, RELEASE_FILES_REQUIRED_COLUMNS),
+    ]
+    for path, required_columns in header_checks:
+        missing_columns = missing_required_columns(path, required_columns)
+        if missing_columns:
+            errors.append(
+                "missing required columns in "
+                f"{relative_display_path(path)}: {', '.join(missing_columns)}"
+            )
+
+    if errors:
+        return errors
 
     try:
         manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
