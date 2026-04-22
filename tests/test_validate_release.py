@@ -94,8 +94,8 @@ def test_release_validation_reports_path_and_count_errors(tmp_path: Path, monkey
             {
                 "data_quality_summary": {
                     "fact_rows": 2,
-                    "geography_rows": 1,
-                    "locality_crosswalk_rows": 1,
+                    "geography_rows": 2,
+                    "locality_crosswalk_rows": 2,
                 },
                 "bad_path": "/abs/path",
             }
@@ -105,6 +105,8 @@ def test_release_validation_reports_path_and_count_errors(tmp_path: Path, monkey
     errors = vr.validate_release()
     assert any("internal absolute paths" in error for error in errors)
     assert any("fact row count" in error for error in errors)
+    assert any("geography row count" in error for error in errors)
+    assert any("locality row count" in error for error in errors)
 
 
 def test_release_validation_reports_absolute_release_file_paths(
@@ -136,6 +138,94 @@ def test_release_validation_reports_missing_quality_summary(
     errors = vr.validate_release()
 
     assert "manifest.json is missing required data_quality_summary fields" in errors
+
+
+def test_contains_absolute_path_handles_nested_structures() -> None:
+    assert vr.contains_absolute_path(
+        {"files": [{"path": "C:\\temp\\internal.csv"}], "extra": ["relative/path.csv"]}
+    )
+    assert not vr.contains_absolute_path({"files": [{"path": "data/current/rent_benchmarks.csv"}]})
+
+
+def test_release_validation_reports_dataset_shape_errors(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    write_csv(
+        vr.FACT_PATH,
+        [
+            "record_id",
+            "geography_id",
+            "geography_type",
+            "metric_type",
+            "value_nis",
+            "period_type",
+            "source_id",
+        ],
+        [
+            {
+                "record_id": "dup",
+                "geography_id": "9999",
+                "geography_type": "bad",
+                "metric_type": "bad",
+                "value_nis": "",
+                "period_type": "bad",
+                "source_id": "nadlan.gov.il",
+            },
+            {
+                "record_id": "dup",
+                "geography_id": "1000",
+                "geography_type": "locality",
+                "metric_type": "average_rent_published",
+                "value_nis": "5200",
+                "period_type": "quarterly",
+                "source_id": "nadlan.gov.il",
+            },
+        ],
+    )
+
+    errors = vr.validate_release()
+
+    assert "duplicate record_id values found in rent_benchmarks.csv" in errors
+    assert "rent_benchmarks.csv contains blank value_nis fields" in errors
+    assert "rent_benchmarks.csv contains invalid geography_type values" in errors
+    assert "rent_benchmarks.csv contains invalid metric_type values" in errors
+    assert "rent_benchmarks.csv contains invalid period_type values" in errors
+    assert any("fact rows missing geography_reference join keys" in error for error in errors)
+
+
+def test_release_validation_reports_missing_canonical_paths(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    write_csv(
+        vr.RELEASE_FILES_PATH,
+        ["path"],
+        [{"path": "data/current/rent_benchmarks.csv"}],
+    )
+
+    errors = vr.validate_release()
+
+    assert "release_files.csv is missing one or more canonical file paths" in errors
+
+
+def test_build_summary_reads_fixture_contents(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+
+    summary = vr.build_summary()
+
+    assert summary == {
+        "fact_rows": 1,
+        "geography_rows": 1,
+        "distinct_fact_sources": ["nadlan.gov.il"],
+    }
+
+
+def test_main_returns_zero_without_check_on_validation_errors(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    vr.MANIFEST_PATH.write_text(json.dumps({"bad_path": "/abs/path"}), encoding="utf-8")
+    monkeypatch.setattr("sys.argv", ["validate_release.py"])
+
+    assert vr.main() == 0
+    assert "Release validation failed:" in capsys.readouterr().out
 
 
 def test_main_returns_zero_for_clean_fixture(tmp_path: Path, monkeypatch, capsys) -> None:
@@ -172,6 +262,66 @@ def test_build_release_metadata_main_writes_expected_outputs(
     manifest = json.loads((tmp_path / "metadata" / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["files"][0]["path"] == "data/current/rent_benchmarks.csv"
     assert manifest["data_quality_summary"]["locality_crosswalk_rows"] == 1
+
+
+def test_build_release_files_and_manifest_helpers(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+
+    release_files = brm.build_release_files()
+    manifest = brm.build_manifest(release_files)
+
+    assert [row["path"] for row in release_files] == [
+        "data/current/rent_benchmarks.csv",
+        "data/current/geography_reference.csv",
+        "data/current/locality_crosswalk.csv",
+    ]
+    assert all(row["release_version"] == brm.RELEASE_VERSION for row in release_files)
+    assert manifest["release_version"] == brm.RELEASE_VERSION
+    assert manifest["schema_version"] == brm.SCHEMA_VERSION
+    assert manifest["data_quality_summary"]["fact_rows"] == 1
+
+
+def test_build_data_dictionary_and_source_inventory(tmp_path: Path, monkeypatch) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+
+    data_dictionary = brm.build_data_dictionary()
+    source_inventory = brm.build_source_inventory()
+
+    assert data_dictionary[0]["file_name"] == "rent_benchmarks.csv"
+    assert {row["column_name"] for row in data_dictionary if row["file_name"] == "geography_reference.csv"} == {
+        "geography_id"
+    }
+    assert {row["source_id"] for row in source_inventory} == {
+        "nadlan.gov.il",
+        "cbs_table49",
+        "boi_hedonic",
+        "data.gov.il",
+    }
+
+
+def test_sha256_and_write_csv_helpers(tmp_path: Path) -> None:
+    sample = tmp_path / "sample.csv"
+    brm.write_csv(sample, ["col"], [{"col": "1"}])
+
+    assert brm.read_csv(sample) == [{"col": "1"}]
+    assert (
+        brm.sha256(sample)
+        == "d08c2f9873cf4e38ab7e9846bba35522cdb517c00be5035ab9c6e6ec22dc28cb"
+    )
+
+
+def test_build_release_metadata_module_main_raises_system_exit(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    monkeypatch.setattr("sys.argv", ["build_release_metadata.py"])
+
+    try:
+        runpy.run_module("scripts.build_release_metadata", run_name="__main__")
+    except SystemExit as exc:
+        assert exc.code == 0
+    else:
+        raise AssertionError("expected SystemExit")
 
 
 def test_module_main_raises_system_exit_when_run_as_script(monkeypatch) -> None:
