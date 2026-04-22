@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,7 +25,7 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 def contains_absolute_path(value: object) -> bool:
     if isinstance(value, str):
-        return value.startswith("/")
+        return PurePosixPath(value).is_absolute() or PureWindowsPath(value).is_absolute()
     if isinstance(value, list):
         return any(contains_absolute_path(item) for item in value)
     if isinstance(value, dict):
@@ -84,6 +84,8 @@ def validate_release() -> list[str]:
     actual_paths = {row["path"] for row in release_files}
     if expected_paths - actual_paths:
         errors.append("release_files.csv is missing one or more canonical file paths")
+    if any(contains_absolute_path(row["path"]) for row in release_files):
+        errors.append("release_files.csv contains absolute paths")
 
     return errors
 

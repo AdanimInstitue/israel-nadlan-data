@@ -1,4 +1,4 @@
-Repository: `AdanimInstitue/israel-nadlan-data`
+Repository: `{{ github.repository }}`
 
 This repository is a public data product. Prioritize:
 - rights and attribution clarity

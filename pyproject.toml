@@ -23,6 +23,9 @@ addopts = "-p no:cacheprovider"
 branch = true
 source = ["scripts"]
 
+[tool.setuptools]
+py-modules = []
+
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
