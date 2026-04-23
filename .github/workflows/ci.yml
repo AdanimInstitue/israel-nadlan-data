@@ -44,7 +44,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports-py312
+          name: coverage-xml
           path: |
             coverage.xml
             coverage-report.txt
@@ -64,6 +64,8 @@ jobs:
       publish_mode: append
       target_patch_coverage: "100"
       include_patch_coverage: true
-      coverage_artifact_prefix: pr-agent-context-coverage
+      patch_coverage_source_mode: coverage_xml_artifact
+      coverage_report_artifact_name: coverage-xml
+      coverage_report_filename: coverage.xml
       prompt_template_file: .github/pr-agent-context-template.md
       debug_artifacts: true

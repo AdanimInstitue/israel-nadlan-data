@@ -69,6 +69,10 @@ jobs:
       pull_request_head_sha_override: ${{ github.event.inputs.pull_request_head_sha || '' }}
       target_patch_coverage: "100"
       include_patch_coverage: true
-      coverage_artifact_prefix: pr-agent-context-coverage
+      patch_coverage_source_mode: coverage_xml_artifact
+      coverage_report_artifact_name: coverage-xml
+      coverage_report_filename: coverage.xml
+      enable_cross_run_coverage_lookup: true
+      coverage_source_workflows: ci
       prompt_template_file: .github/pr-agent-context-template.md
       debug_artifacts: true
