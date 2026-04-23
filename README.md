@@ -72,4 +72,4 @@ python scripts/validate_release.py --check
 
 ## Workflow Note
 
-`pr-agent-context` is intentionally referenced as floating `@v4` in this repository's GitHub Actions workflows. Do not pin it to a SHA or exact point release.
+`pr-agent-context` is intentionally referenced as floating `v4` in this repository's GitHub Actions workflows, including both the reusable workflow ref and `tool_ref`. Do not pin either to a SHA or exact point release.

@@ -60,7 +60,7 @@ jobs:
       pull-requests: write
     uses: shaypal5/pr-agent-context/.github/workflows/pr-agent-context.yml@v4
     with:
-      tool_ref: 239529d9cead5443f9c22945c735ca493f044662
+      tool_ref: v4
       publish_mode: append
       target_patch_coverage: "100"
       include_patch_coverage: true

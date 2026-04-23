@@ -59,7 +59,7 @@ jobs:
       pull-requests: write
     uses: shaypal5/pr-agent-context/.github/workflows/pr-agent-context.yml@v4
     with:
-      tool_ref: 239529d9cead5443f9c22945c735ca493f044662
+      tool_ref: v4
       execution_mode: refresh
       publish_mode: append
       trigger_event_name_override: ${{ github.event.inputs.trigger_event_name || '' }}
