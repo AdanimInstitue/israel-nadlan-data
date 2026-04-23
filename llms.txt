@@ -1,0 +1,28 @@
+# israel-nadlan-data
+
+Public dataset repository for Israeli geography reference and locality context data.
+
+## Core Tree
+
+```text
+data/
+  current/
+  releases/v0.2.0/
+metadata/
+  manifest.json
+  data_dictionary.csv
+  release_files.csv
+docs/
+scripts/
+tests/
+```
+
+## Key Pointers
+
+- Geography dimension: `data/current/geography_reference.csv`
+- Compatibility crosswalk: `data/current/locality_crosswalk.csv`
+- Release manifest: `metadata/manifest.json`
+- File checksums and row counts: `metadata/release_files.csv`
+- Column dictionary: `metadata/data_dictionary.csv`
+- Metadata generation: `scripts/build_release_metadata.py`
+- Validation: `scripts/validate_release.py`

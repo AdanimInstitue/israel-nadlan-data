@@ -1,0 +1,19 @@
+file_name,column_name,description
+geography_reference.csv,geography_id,Canonical geography reference field.
+geography_reference.csv,geography_type,Canonical geography reference field.
+geography_reference.csv,locality_code,Canonical geography reference field.
+geography_reference.csv,district_code,Canonical geography reference field.
+geography_reference.csv,geography_name_he,Canonical geography reference field.
+geography_reference.csv,geography_name_en,Canonical geography reference field.
+geography_reference.csv,district_he,Canonical geography reference field.
+geography_reference.csv,district_en,Canonical geography reference field.
+geography_reference.csv,population_approx,Canonical geography reference field.
+geography_reference.csv,source,Canonical geography reference field.
+geography_reference.csv,is_active,Canonical geography reference field.
+locality_crosswalk.csv,locality_code,Locality context and compatibility field.
+locality_crosswalk.csv,locality_name_he,Locality context and compatibility field.
+locality_crosswalk.csv,locality_name_en,Locality context and compatibility field.
+locality_crosswalk.csv,district_he,Locality context and compatibility field.
+locality_crosswalk.csv,district_en,Locality context and compatibility field.
+locality_crosswalk.csv,population_approx,Locality context and compatibility field.
+locality_crosswalk.csv,source,Locality context and compatibility field.
