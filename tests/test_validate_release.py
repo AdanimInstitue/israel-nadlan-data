@@ -499,6 +499,70 @@ def test_release_validation_reports_duplicate_release_file_paths(
     assert "release_files.csv contains duplicate path rows" in errors
 
 
+def test_release_validation_reports_inconsistent_release_metadata_values(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    rows = list(csv.DictReader(vr.RELEASE_FILES_PATH.open(encoding="utf-8", newline="")))
+    rows[0]["release_version"] = "v9.9.9"
+    rows[1]["schema_version"] = "9.9.9"
+    rewrite_release_file_metadata(vr.RELEASE_FILES_PATH, rows)
+
+    errors = vr.validate_release()
+
+    assert "release_files.csv contains inconsistent release_version values" in errors
+    assert "release_files.csv contains inconsistent schema_version values" in errors
+
+
+def test_release_validation_reports_missing_release_file_metadata_row(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    geography_rows = list(csv.DictReader(vr.GEOGRAPHY_PATH.open(encoding="utf-8", newline="")))
+    locality_rows = list(csv.DictReader(vr.LOCALITY_CROSSWALK_PATH.open(encoding="utf-8", newline="")))
+    release_files = list(csv.DictReader(vr.RELEASE_FILES_PATH.open(encoding="utf-8", newline="")))
+    original_read_csv = vr.read_csv
+
+    class TransientPathRow(dict[str, str]):
+        def __init__(self, *args, transient_path: str, fallback_path: str, **kwargs) -> None:
+            super().__init__(*args, **kwargs)
+            self._transient_path = transient_path
+            self._fallback_path = fallback_path
+            self._path_reads = 0
+
+        def __getitem__(self, key: str) -> str:
+            if key == "path":
+                self._path_reads += 1
+                if self._path_reads == 1:
+                    return self._transient_path
+                return self._fallback_path
+            return super().__getitem__(key)
+
+    release_files[-1] = TransientPathRow(
+        release_files[-1],
+        transient_path="data/releases/v0.2.0/locality_crosswalk.csv",
+        fallback_path="data/releases/v0.2.0/_missing_locality_crosswalk.csv",
+    )
+
+    def read_csv_with_missing_metadata(path: Path) -> list[dict[str, str]]:
+        if path == vr.GEOGRAPHY_PATH:
+            return geography_rows
+        if path == vr.LOCALITY_CROSSWALK_PATH:
+            return locality_rows
+        if path == vr.RELEASE_FILES_PATH:
+            return release_files
+        return original_read_csv(path)
+
+    monkeypatch.setattr(vr, "read_csv", read_csv_with_missing_metadata)
+
+    errors = vr.validate_release()
+
+    assert (
+        "release_files.csv is missing metadata for data/releases/v0.2.0/locality_crosswalk.csv"
+        in errors
+    )
+
+
 def test_release_validation_reports_release_file_read_errors(tmp_path: Path, monkeypatch) -> None:
     install_fixture_repo(tmp_path, monkeypatch)
     original_read_csv = vr.read_csv
