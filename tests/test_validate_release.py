@@ -510,7 +510,27 @@ def test_release_validation_reports_release_file_read_errors(tmp_path: Path, mon
 
     monkeypatch.setattr(vr, "read_csv", raise_for_release_files)
 
-    assert vr.validate_release() == ["failed to read release files: release files unavailable"]
+    assert vr.validate_release() == [
+        "failed to read metadata/release_files.csv: release files unavailable"
+    ]
+
+
+def test_release_validation_reports_specific_required_file_read_errors(
+    tmp_path: Path, monkeypatch
+) -> None:
+    install_fixture_repo(tmp_path, monkeypatch)
+    original_read_csv = vr.read_csv
+
+    def raise_for_geography(path: Path) -> list[dict[str, str]]:
+        if path == vr.GEOGRAPHY_PATH:
+            raise OSError("geography unavailable")
+        return original_read_csv(path)
+
+    monkeypatch.setattr(vr, "read_csv", raise_for_geography)
+
+    assert vr.validate_release() == [
+        "failed to read data/current/geography_reference.csv: geography unavailable"
+    ]
 
 
 def test_release_validation_reports_manifest_read_errors(tmp_path: Path, monkeypatch) -> None:

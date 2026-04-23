@@ -99,15 +99,24 @@ def contains_absolute_path(value: object) -> bool:
 def validate_release() -> list[str]:
     errors: list[str] = []
     header_validation_failed = False
-    try:
-        geography_rows = read_csv(GEOGRAPHY_PATH)
-        locality_rows = read_csv(LOCALITY_CROSSWALK_PATH)
-        release_files = read_csv(RELEASE_FILES_PATH)
-    except FileNotFoundError as exc:
-        filename = Path(exc.filename) if exc.filename else GEOGRAPHY_PATH
-        return [f"required release file is missing: {relative_display_path(filename)}"]
-    except OSError as exc:
-        return [f"failed to read release files: {exc}"]
+    csv_inputs = [
+        GEOGRAPHY_PATH,
+        LOCALITY_CROSSWALK_PATH,
+        RELEASE_FILES_PATH,
+    ]
+    csv_rows: dict[Path, list[dict[str, str]]] = {}
+    for path in csv_inputs:
+        try:
+            csv_rows[path] = read_csv(path)
+        except FileNotFoundError as exc:
+            filename = Path(exc.filename) if exc.filename else path
+            return [f"required release file is missing: {relative_display_path(filename)}"]
+        except OSError as exc:
+            return [f"failed to read {relative_display_path(path)}: {exc}"]
+
+    geography_rows = csv_rows[GEOGRAPHY_PATH]
+    locality_rows = csv_rows[LOCALITY_CROSSWALK_PATH]
+    release_files = csv_rows[RELEASE_FILES_PATH]
 
     header_checks = [
         (GEOGRAPHY_PATH, GEOGRAPHY_REQUIRED_COLUMNS),
@@ -226,7 +235,9 @@ def validate_release() -> list[str]:
     for relative_path in sorted(expected_paths):
         actual_path = ROOT / relative_path
         release_entry = next((row for row in release_files if row["path"] == relative_path), None)
-        assert release_entry is not None
+        if release_entry is None:
+            errors.append(f"release_files.csv is missing metadata for {relative_path}")
+            continue
         if not actual_path.exists():
             errors.append(f"missing file on disk: {relative_path}")
             continue
